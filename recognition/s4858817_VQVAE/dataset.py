@@ -15,3 +15,12 @@ SPLIT2SUBDIR = {
     "val":   "keras_slices_val",
     "test":  "keras_slices_test",
 }
+
+# Finding all files for a split directory. 
+def _discover(split_dir: Path) -> List[Path]:
+    files: List[Path] = []
+    for ext in IMG_EXTS:
+        files += list(split_dir.glob(f"*{ext}"))
+        files.sort()
+    if not files:
+        files.sort()
