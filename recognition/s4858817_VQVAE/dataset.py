@@ -50,3 +50,9 @@ def _load_slice(p: Path) -> np.ndarray:
         return flat.astype(np.float32)
     except Exception:
         return np.zeros((1, 1), dtype=np.float32)
+    
+# Function that does z-score normalisation so that it recenters each slice to 
+# a mean of 0 and a variance of 1 so that the intensities are on a comparable scale. 
+def _zscore(x: np.ndarray, eps: float = 1e-6) -> np.ndarray:
+    m, s = float(x.mean()), float(x.std())
+    return (x - m) / (s + eps) if s > 0 else x - m
