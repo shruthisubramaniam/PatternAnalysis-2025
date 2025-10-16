@@ -15,3 +15,10 @@ class Residual(nn.Module):
         )
     
     def forward(self, x): return x + self.block(x)
+
+def conv_block(ci: int, co: int, ks: int = 3, stride: int = 1, pad: int = 1):
+    return nn.Sequential(
+        nn.Conv2d(ci, co, ks, stride=stride, padding=pad),
+        nn.BatchNorm2d(co),
+        nn.ReLU(inplace=True),
+    )
