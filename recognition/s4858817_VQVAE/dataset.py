@@ -98,7 +98,7 @@ def get_dataloader(
     normalization: str = "zscore",
 ): 
     train_ds = SliceDataset(repo_root, "train", normalization)
-    val_ds   = SliceDataset(repo_root, "validate",   normalization)
+    val_ds   = SliceDataset(repo_root, "val",   normalization)
     test_ds  = SliceDataset(repo_root, "test",  normalization)
 
     train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True,
