@@ -97,3 +97,17 @@ class Decoder(nn.Module):
     def forward(self, z):
         z = self.in_proj(z)
         return self.net(z)
+
+class VQVAE(nn.Module):
+    def __init__(self, in_channels: int = 1, base: int = 64, z_dim: int = 128, n_codes: int = 512, beta: float = 0.25):
+        super().__init__()
+        self.encoder = Encoder(in_ch=in_channels, base=base, z_dim=z_dim)
+        self.quantizer = VectorQuantizer(num_embeddings=n_codes, embedding_dim=z_dim, beta=beta)
+        self.decoder = Decoder(out_ch=in_channels, base=base, z_dim=z_dim)
+    
+    def forward(self, x):
+        z_e = self.encoder(x)
+        z_q, vq_loss, perplexity, _ = self.quantizer(z_e)
+        x_hat = self.decoder(z_q)
+        return x_hat, vq_loss, perplexity
+
