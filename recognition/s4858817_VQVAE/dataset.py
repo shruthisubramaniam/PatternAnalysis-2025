@@ -57,6 +57,20 @@ def _load_slice(p: Path) -> np.ndarray:
         return flat.astype(np.float32)
     except Exception:
         return np.zeros((1, 1), dtype=np.float32)
+    
+def pad_collate(batch):
+    # batch: list[(tensor[1,H,W], path)]
+    xs, paths = zip(*batch)
+    Hmax = max(x.shape[-2] for x in xs)
+    Wmax = max(x.shape[-1] for x in xs)
+
+    padded = []
+    for x in xs:
+        dh = Hmax - x.shape[-2]
+        dw = Wmax - x.shape[-1]
+        # Pad (left, right, top, bottom). We'll pad on bottom/right only.
+        padded.append(F.pad(x, (0, dw, 0, dh)))
+    return torch.stack(padded, 0), list(paths)
 
 class SliceDataset(Dataset):
 
