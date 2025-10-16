@@ -21,10 +21,8 @@ def _discover(split_dir: Path) -> List[Path]:
     files: List[Path] = []
     for ext in IMG_EXTS:
         files += list(split_dir.glob(f"*{ext}"))
-        files.sort()
-    if not files:
-        files.sort()
-        return files
+    files.sort()
+    return files
 
 # For training it is important to have every sample in the training 
 # set to be consistent. 
