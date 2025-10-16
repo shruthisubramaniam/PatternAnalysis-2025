@@ -31,3 +31,18 @@ class VectorQuantizer(nn.Module):
         self.beta = beta
         self.embedding = nn.Embedding(num_embeddings, embedding_dim)
         self.embedding.weight.data.uniform_(-1.0 / num_embeddings, 1.0 / num_embeddings)
+
+def forward(self, z_e: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    B, D, H, W = z_e.shape
+    z = z_e.permute(0, 2, 3, 1).contiguous() # (B, H, W, D)
+    flat = z.view(-1, D) # (BHW, D)
+    emb = self.embedding.weight # (K, D)
+
+    # L2 sqaured distances calculated between the embeddings and the latent
+    dist = (
+        flat.pow(2).sum(dim=1, keepdim=True)
+        - 2 * flat @ emb.t()
+        + emb.pow(2).sum(dim=1)
+    ) # (BHW, K)
+    indices = torch.argmin(dist, dim=1) # (BHW, )
+    z_q = self.embedding(indices).view(B, H, W, D).permute(0, 3, 1, 2)
