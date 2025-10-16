@@ -101,9 +101,17 @@ def get_dataloader(
     val_ds   = SliceDataset(repo_root, "val",   normalization)
     test_ds  = SliceDataset(repo_root, "test",  normalization)
 
-    train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True)
-    val_dl   = DataLoader(val_ds,   batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
-    test_dl  = DataLoader(test_ds,  batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
+    train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True,
+                      num_workers=num_workers, pin_memory=True,
+                      collate_fn=pad_collate)
+
+    val_dl   = DataLoader(val_ds, batch_size=batch_size, shuffle=False,
+                      num_workers=num_workers, pin_memory=True,
+                      collate_fn=pad_collate)
+
+    test_dl  = DataLoader(test_ds, batch_size=batch_size, shuffle=False,
+                      num_workers=num_workers, pin_memory=True,
+                      collate_fn=pad_collate)
     return train_dl, val_dl, test_dl
 
 if __name__ == "__main__":
