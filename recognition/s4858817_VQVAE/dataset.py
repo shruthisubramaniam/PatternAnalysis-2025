@@ -45,6 +45,7 @@ def _load_slice(p: Path) -> np.ndarray:
                 arr = arr[..., 0]
             return arr
         nimg = nib.load(str(p))
+        nimg = nib.as_closest_canonical(nimg)
         arr = np.squeeze(np.asarray(nimg.get_fdata(), dtype=np.float32))
         if arr.ndim == 2:
             return arr
