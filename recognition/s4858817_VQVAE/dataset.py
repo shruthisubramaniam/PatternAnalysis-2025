@@ -24,6 +24,7 @@ def _discover(split_dir: Path) -> List[Path]:
         files.sort()
     if not files:
         files.sort()
+        return files
 
 # For training it is important to have every sample in the training 
 # set to be consistent. 
@@ -31,6 +32,19 @@ def _discover(split_dir: Path) -> List[Path]:
 # files are stores as .nii/.nii.gz. 
 # So the function below accounts for this. It also cleans the data in a way by 
 # making sure that the smples are not in this format (H x W x 1) or even full 3D volumes (H x W x D). 
+
+
+class SliceDataset(Dataset):
+
+    def __init__(self, repo_root: str | Path, split: str = "train", normalization: str = "zscore"):
+        assert split in SPLIT2SUBDIR, f"split must be one of {list(SPLIT2SUBDIR)}"
+        self.root = Path(repo_root) / "dataset" / SPLIT2SUBDIR[split]
+        self.files = _discover(self.root)
+        self.normalization = normalization
+    
+    
+
+
 
 def _load_slice(p: Path) -> np.ndarray:
     try:
