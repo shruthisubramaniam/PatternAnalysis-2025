@@ -22,3 +22,12 @@ def conv_block(ci: int, co: int, ks: int = 3, stride: int = 1, pad: int = 1):
         nn.BatchNorm2d(co),
         nn.ReLU(inplace=True),
     )
+
+class VectorQuantizer(nn.Module):
+    def __init__(self, num_embeddings: int = 512, embedding_dim: int = 128, beta: float = 0.25):
+        super().__init__()
+        self.num_embeddings = num_embeddings
+        self.embedding_dim = embedding_dim
+        self.beta = beta
+        self.embedding = nn.Embedding(num_embeddings, embedding_dim)
+        self.embedding.weight.data.uniform_(-1.0 / num_embeddings, 1.0 / num_embeddings)
