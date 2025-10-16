@@ -46,3 +46,11 @@ def forward(self, z_e: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.
     ) # (BHW, K)
     indices = torch.argmin(dist, dim=1) # (BHW, )
     z_q = self.embedding(indices).view(B, H, W, D).permute(0, 3, 1, 2)
+
+    # Obtaining the loss
+    loss_code = F.mse_loss(z_q, z_e.detach())
+    loss_commit = F.mse_loss(z_e, z_q.detach())
+    zq_loss = loss_code + self.beta * loss_commit
+
+    # Estimator 
+    
