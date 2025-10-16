@@ -13,7 +13,7 @@ IMG_EXTS = (".nii", ".nii.gz", ".npy") # Defining how the images exist
 # Directory that splits names for the subfolders 
 SPLIT2SUBDIR = {
     "train": "keras_slices_train",
-    "val":   "keras_slices_val",
+    "val":   "keras_slices_validate",
     "test":  "keras_slices_test",
 }
 
@@ -98,7 +98,7 @@ def get_dataloader(
     normalization: str = "zscore",
 ): 
     train_ds = SliceDataset(repo_root, "train", normalization)
-    val_ds   = SliceDataset(repo_root, "val",   normalization)
+    val_ds   = SliceDataset(repo_root, "validate",   normalization)
     test_ds  = SliceDataset(repo_root, "test",  normalization)
 
     train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True,
