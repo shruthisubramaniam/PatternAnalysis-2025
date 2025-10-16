@@ -91,3 +91,22 @@ def get_dataloader(
     val_dl   = DataLoader(val_ds,   batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
     test_dl  = DataLoader(test_ds,  batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
     return train_dl, val_dl, test_dl
+
+if __name__ == "__main__":
+    import argparse
+    import matplotlib.pyplot as plt
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--repo_root", type=str, default=".", help="Repo root containing /dataset")
+    ap.add_argument("--split", choices=["train", "val", "test"], default="train")
+    args = ap.parse_args()
+
+    ds = SliceDataset(args.repo_root, args.split)
+    print(f"{args.split} samples:", len(ds))
+    x, p = ds[0]
+    print("first sample shape:", tuple(x.shape), "path:", p)
+
+    plt.imshow(x[0].numpy(), cmap="gray")
+    plt.title(p)
+    plt.axis("off")
+    plt.show()
