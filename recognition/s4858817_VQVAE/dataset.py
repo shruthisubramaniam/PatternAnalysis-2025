@@ -5,7 +5,7 @@ from typing import Optional, Tuple, List
 import nibabel as nib
 import numpy as np
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 
 IMG_EXTS = (".nii", ".nii.gz", ".npy") # Defining how the images exist
 
@@ -33,6 +33,30 @@ def _discover(split_dir: Path) -> List[Path]:
 # So the function below accounts for this. It also cleans the data in a way by 
 # making sure that the smples are not in this format (H x W x 1) or even full 3D volumes (H x W x D). 
 
+# Function that does z-score normalisation so that it recenters each slice to 
+# a mean of 0 and a variance of 1 so that the intensities are on a comparable scale. 
+def _zscore(x: np.ndarray, eps: float = 1e-6) -> np.ndarray:
+    m, s = float(x.mean()), float(x.std())
+    return (x - m) / (s + eps) if s > 0 else x - m
+
+def _load_slice(p: Path) -> np.ndarray:
+    try:
+        if p.suffix == ".npy":
+            arr = np.squeeze(np.load(p)).astype(np.float32)
+            if arr.ndim > 2:
+                arr = arr[..., 0]
+            return arr
+        nimg = nib.load(str(p))
+        arr = np.squeeze(np.asarray(nimg.get_fdata(), dtype=np.float32))
+        if arr.ndim == 2:
+            return arr
+        if arr.ndim == 3:
+            mid = arr.shape[2] // 2
+            return arr[..., mid].astype(np.float32)
+        flat = arr.reshape(arr.shape[0], -1) if arr.ndim >= 2 else np.atleast_2d(arr)
+        return flat.astype(np.float32)
+    except Exception:
+        return np.zeros((1, 1), dtype=np.float32)
 
 class SliceDataset(Dataset):
 
@@ -53,27 +77,17 @@ class SliceDataset(Dataset):
         x = torch.from_numpy(arr[None, ...]) # [1,H,W] float32
         return x, str(p)
 
-def _load_slice(p: Path) -> np.ndarray:
-    try:
-        if p.suffix == ".npy":
-            arr = np.squeeze(np.load(p)).astype(np.float32)
-            if arr.ndim > 2:
-                arr = arr[..., 0]
-            return arr
-        nimg = nib.load(str(p))
-        arr = np.squeeze(np.asarray(nimg.get_fdata(), dtype=np.float32))
-        if arr.ndim == 2:
-            return arr
-        if arr.ndim == 3:
-            mid = arr.shape[2] // 2
-            return arr[..., mid].astype(np.float32)
-        flat = arr.reshape(arr.shape[0], -1) if arr.ndim >= 2 else np.atleast_2d(arr)
-        return flat.astype(np.float32)
-    except Exception:
-        return np.zeros((1, 1), dtype=np.float32)
-    
-# Function that does z-score normalisation so that it recenters each slice to 
-# a mean of 0 and a variance of 1 so that the intensities are on a comparable scale. 
-def _zscore(x: np.ndarray, eps: float = 1e-6) -> np.ndarray:
-    m, s = float(x.mean()), float(x.std())
-    return (x - m) / (s + eps) if s > 0 else x - m
+def get_dataloader(
+    repo_root: str | Path,
+    batch_size: int = 16,
+    num_workers: int = 0,
+    normalization: str = "zscore",
+): 
+    train_ds = SliceDataset(repo_root, "train", normalization)
+    val_ds   = SliceDataset(repo_root, "val",   normalization)
+    test_ds  = SliceDataset(repo_root, "test",  normalization)
+
+    train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True)
+    val_dl   = DataLoader(val_ds,   batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
+    test_dl  = DataLoader(test_ds,  batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
+    return train_dl, val_dl, test_dl
