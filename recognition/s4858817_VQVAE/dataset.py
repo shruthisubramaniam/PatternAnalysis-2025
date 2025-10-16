@@ -42,9 +42,16 @@ class SliceDataset(Dataset):
         self.files = _discover(self.root)
         self.normalization = normalization
     
-    
+    def __len__(self) -> int:
+        return len(self.files)
 
-
+    def __getitem__(self, idx: int):
+        p = self.files[idx]
+        arr = _load_slice(p) # np.ndarray HxW float32
+        if self.normalization == "zscore":
+            arr = _zscore(arr)
+        x = torch.from_numpy(arr[None, ...]) # [1,H,W] float32
+        return x, str(p)
 
 def _load_slice(p: Path) -> np.ndarray:
     try:
