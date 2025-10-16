@@ -6,6 +6,7 @@ import nibabel as nib
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
+import torch.nn.functional as F
 
 IMG_EXTS = (".nii", ".nii.gz", ".npy") # Defining how the images exist
 
