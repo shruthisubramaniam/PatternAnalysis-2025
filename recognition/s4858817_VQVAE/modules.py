@@ -50,7 +50,14 @@ def forward(self, z_e: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.
     # Obtaining the loss
     loss_code = F.mse_loss(z_q, z_e.detach())
     loss_commit = F.mse_loss(z_e, z_q.detach())
-    zq_loss = loss_code + self.beta * loss_commit
+    vq_loss = loss_code + self.beta * loss_commit
 
     # Estimator 
-    
+    z_q = z_e + (z_q - z_e).detach()
+
+    onehot = F.one_hot(indices, self.num_embeddings).float()
+    avg_probs = onehot.mean(dim=0)
+    perplexity = torch.exp(-(avg_probs * (avg_probs + 1e-10).log()).sum())
+    return z_q, vq_loss, perplexity, indices.view(B, H, W)
+ 
+
