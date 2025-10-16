@@ -79,3 +79,21 @@ class Encoder(nn.Module):
     
     def forward(self, x): return self.net(x)
             
+class Decoder(nn.Module):
+    def __init__(self, out_ch: int = 1, base: int = 64, z_dim: int = 128):
+        super().__init__()
+        self.in_proj = nn.Conv2d(z_dim, base*4, 1)
+        self.net = nn.Sequential(
+            Residual(base*4),
+            nn.ConvTranspose2d(base*4, base*2, 4, stride=2, padding=1), # x2
+            Residual(base*2),
+            nn.ConvTranspose2d(base*2, base, 4, stride=2, padding=1), # x4
+            Residual(base),
+            nn.ConvTranspose2d(base, base, 4, stride=2, padding=1), # x8
+            nn.ReLU(inplace=True),
+            nn.Conv2d(base, out_ch, 1),
+        )
+
+    def forward(self, z):
+        z = self.in_proj(z)
+        return self.net(z)
