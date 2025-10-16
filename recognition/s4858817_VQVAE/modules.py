@@ -60,4 +60,22 @@ def forward(self, z_e: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.
     perplexity = torch.exp(-(avg_probs * (avg_probs + 1e-10).log()).sum())
     return z_q, vq_loss, perplexity, indices.view(B, H, W)
  
-
+class Encoder(nn.Module):
+    def __init__(self, in_ch: int = 1, base: int = 64, z_dim: int = 128):
+        super().__init__()
+        self.net = nn.Sequential(
+            conv_block(in_ch, base),
+            conv_block(base, base),
+            conv_block(base, base, stride=2),
+            Residual(base),
+            conv_block(base, base*2),
+            conv_block(base*2, base*2, stride=2),
+            Residual(base*2),
+            conv_block(base*2, base*4),
+            conv_block(base*4, base*4, stride=2),
+            Residual(base*4),
+            nn.Conv2d(base*4, z_dim, 1),
+        )
+    
+    def forward(self, x): return self.net(x)
+            
