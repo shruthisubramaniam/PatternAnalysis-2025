@@ -158,4 +158,10 @@ def main(args):
         history['val_ssim'].append(epoch_ssim)
         history['val_perplexity'].append(avg_val_perplexity)
 
-        
+        # Printing the train loss, val loss, val ssim and val perplexity
+        print(f"Epoch {epoch+1}/{args.epochs} Summary: "
+              f"Train Loss: {avg_train_loss:.4f}, "
+              f"Val Loss: {avg_val_loss:.4f}, "
+              f"Val SSIM: {epoch_ssim:.4f}, "
+              f"Val Perplexity: {avg_val_perplexity:.2f}")
+
