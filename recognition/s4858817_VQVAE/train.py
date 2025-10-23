@@ -214,6 +214,21 @@ def main(args):
     print(f"Test Loss: {avg_test_loss:.4f}")
     print(f"Test Perplexity: {avg_test_perplexity:.2f}")
 
+# Calling the main function 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train a VQ-VAE model on 2D MRI slices.")
+    parser.add_argument("--repo_root", type=str, default=".", help="Root directory of the repository containing the 'dataset' folder.")
+    parser.add_argument("--save_dir", type=str, default="./results", help="Directory to save model checkpoints and plots.")
+    parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs.")
+    parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training and validation.")
+    parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate for the Adam optimizer.")
+    parser.add_argument("--num_workers", type=int, default=2, help="Number of workers for the DataLoader.")
+    parser.add_argument("--model_base_channels", type=int, default=64, help="Number of base channels in the VQ-VAE encoder/decoder.")
+    parser.add_argument("--z_dim", type=int, default=128, help="Dimension of the latent embeddings.")
+    parser.add_argument("--n_codes", type=int, default=512, help="Number of codes in the VQ codebook.")
+
+    args = parser.parse_args()
+    main(args)
 
 
 
