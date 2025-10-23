@@ -27,4 +27,17 @@ def plot_metrics(save_dir: Path, train_losses, val_losses, val_ssims, val_perple
     plt.grid(True)
     plt.savefig(save_dir / "lost_plot.png")
 
+    # Plotting the validation SSIM
+    plt.figure(figsize = (10,5))
+    plt.plot(epochs, val_ssims, label='Validation SSIM', color = 'red')
+    plt.title('Validation SSIM')
+    plt.xlabel('Epochs')
+    plt.ylabel('SSIM Scores')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(save_dir / "validation_ssim_plot.png")
+    plt.close()
+
+    
+
     
