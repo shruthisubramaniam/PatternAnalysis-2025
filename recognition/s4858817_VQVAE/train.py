@@ -79,4 +79,20 @@ def reconstruction_vs_original(model, dataloader, device, save_path: Path, num_i
     print(f"Reconstruction examples vs originals saved to {save_path}")
     plt.close()
 
+# Creating the main fucntion 
+def main(args):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device {device}")
+
+    save_dir = Path(args.save_dir)
+    save_dir.mkdir(parents=True, exist_ok=True)
+
+    # Getting the dataloaders 
+    train_dl, val_dl, test_dl = get_dataloader(repo_root=args.repo_root, batch_size=args.batch_size, num_workers=args.num_workers)
+
+    # Initialising the model, optimiser and metrics 
+    model = VQVAE(in_channels=1, base=args.model_base_channels, z_dim=args.z_dim, n_codes=args.n_code).to(device)
+
+    optimiser = Adam(model.parameters(), lr=args.lr)
+
     
