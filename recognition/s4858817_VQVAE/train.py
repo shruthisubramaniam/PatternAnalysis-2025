@@ -102,4 +102,8 @@ def main(args):
     print(f"Estimated data range for SSIM: {data_range:.4f}")
     ssim_metric = StructuralSimilarityIndexMeasure(data_range=data_range).to(device)
 
+    # Tracking the training 
+    history = {'train_loss': [], 'val_loss': [], 'val_ssim': [], 'val_perplexity': []}
+    best_ssim = -1.0
+
     
