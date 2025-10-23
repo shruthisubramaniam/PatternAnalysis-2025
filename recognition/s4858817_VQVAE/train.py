@@ -172,5 +172,24 @@ def main(args):
             torch.save(model.state_dict(), model_path)
             print(f"SSIM and saved new best model: {best_ssim:.4f} at {model_path}")
 
-            
+    print("\nTraining complete.")
+
+    # Calling the plots
+    plot_metrics(
+        save_dir, 
+        history['train_loss'], 
+        history['val_loss'], 
+        history['val_ssim'],
+        history['val_perplexity']
+    )
+
+    # loading the best model for final evaluation so that it can be used in testing 
+    print("Loading best model for testing and visualization")
+    model.load_state_dict(torch.load(save_dir / "best_model.pth"))
+
+    # Visualising some reconstructions on test data 
+    reconstruction_vs_original(model, test_dl, device, save_dir / "test_reconstructions.png")
+
+    
+
 
