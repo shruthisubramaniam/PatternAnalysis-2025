@@ -106,4 +106,28 @@ def main(args):
     history = {'train_loss': [], 'val_loss': [], 'val_ssim': [], 'val_perplexity': []}
     best_ssim = -1.0
 
+    # Defining the training loop
+    print("Starting training")
+    for epoch in range (args.epochs):
+        model.train()
+        train_loss_epoch = 0.0
+        pbar = tqdm(train_dl, desc=f"Epoch {epoch+1}/{args.epochs} [Train]")
+        for batch, _ in pbar:
+            batch = batch.to(device)
+            optimiser.zero_grad()
+
+            x_hat, vq_loss, _ = model(batch)
+
+            recon_loss = F.mse_loss(x_hat, batch)
+            loss = recon_loss + vq_loss
+
+            loss.backward()
+            optimiser.step()
+
+            train_loss_epoch += loss.item()
+            pbar.set_postfix(total_loss=loss.item(), recon_loss=recon_loss.item(), vq_loss=vq_loss.item())
+
+            avg_train_loss = train_loss_epoch / len(train_dl)
+            history['train_loss'].append(avg_train_loss)
+
     
