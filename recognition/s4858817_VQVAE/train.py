@@ -4,6 +4,9 @@ import argparse
 import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
+from torch.optim import Adam
+from tqdm import tqdm
+from torchmetrics.image import StructuralSimilarityIndexMeasure
 from dataset import get_dataloader
 from modules import VQVAE
 
@@ -12,3 +15,5 @@ def norm_minmax(x: torch.Tensor, eps: float = 1e-6):
     x_min = x.amin(dim=(-2, -1), keepdim=True)
     x_max = x.amax(dim=(-2, -1), keepdim=True)
     return (x - x_min) / (x_max - x_min + eps)
+
+# 
