@@ -164,4 +164,13 @@ def main(args):
               f"Val Loss: {avg_val_loss:.4f}, "
               f"Val SSIM: {epoch_ssim:.4f}, "
               f"Val Perplexity: {avg_val_perplexity:.2f}")
+        
+        # Using the validation ssim to save the best model 
+        if epoch_ssim > best_ssim:
+            best_ssim = epoch_ssim
+            model_path = save_dir / "best_model.pth"
+            torch.save(model.state_dict(), model_path)
+            print(f"SSIM and saved new best model: {best_ssim:.4f} at {model_path}")
+
+            
 
