@@ -70,7 +70,7 @@ def reconstruction_vs_original(model, dataloader, device, save_path: Path, num_i
         axes[0, i].axis('off')
 
         # Displaying the reconstructed images 
-        axes[1, i].imshow(reconstructions[i, 0], cmpa='gray')
+        axes[1, i].imshow(reconstructions[i, 0], cmap='gray')
         axes[1, i].set_title("Reconstruction")
         axes[1, i].axis('off')
     
