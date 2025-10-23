@@ -8,7 +8,7 @@ class Residual(nn.Module):
     def __init__(self, ch: int):
         super().__init__()
         self.block = nn.Sequential(
-            nn.ReLU(inplace=True),
+            nn.ReLU(inplace=False),
             nn.Conv2d(ch, ch, 3, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(ch, ch, 1),
