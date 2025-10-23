@@ -38,6 +38,16 @@ def plot_metrics(save_dir: Path, train_losses, val_losses, val_ssims, val_perple
     plt.savefig(save_dir / "validation_ssim_plot.png")
     plt.close()
 
-    
+    # Plotting the validation perplexity 
+    plt.figure(figsize = (10,5))
+    plt.plot(epochs, val_perplexities, label='Validation perplexity', color = 'green')
+    plt.title('Validation perplexity')
+    plt.xlabel('Epochs')
+    plt.ylabel('Perplexity')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(save_dir / "validation_perplexity_plot.png")
+    plt.close()
+
 
     
