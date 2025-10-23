@@ -49,5 +49,34 @@ def plot_metrics(save_dir: Path, train_losses, val_losses, val_ssims, val_perple
     plt.savefig(save_dir / "validation_perplexity_plot.png")
     plt.close()
 
+    print (f"Plots saved to {save_dir}")
+
+# Creating a fucntion that will help to compare the original images versus the reconstructed images
+def reconstruction_vs_original(model, dataloader, device, save_path: Path, num_images = 8):
+    model.eval()
+    images, _ = next(iter(dataloader))
+    images = images[:num_images].to(device)
+
+    with torch.no_grad():
+        reconstructions, _, _ = model(images)
+
+    images = images.cpu().numpy()
+
+    fig, axes = plt.subplots(2, num_images, figsize = (num_images * 2, 4))
+    for i in range (num_images):
+        # Displaying the original images
+        axes[0, i].imshow(images[i, 0], cmap='gray')
+        axes[0, i].set_title("Original")
+        axes[0, i].axis('off')
+
+        # Displaying the reconstructed images 
+        axes[1, i].imshow(reconstructions[i, 0], cmpa='gray')
+        axes[1, i].set_title("Reconstruction")
+        axes[1, i].axis('off')
+    
+    plt.tight_layout()
+    plt.savefig(save_path)
+    print(f"Reconstruction examples vs originals saved to {save_path}")
+    plt.close()
 
     
