@@ -95,4 +95,11 @@ def main(args):
 
     optimiser = Adam(model.parameters(), lr=args.lr)
 
+    # z-score normalisation of the data is done in dataset.py so the data_range is not fixed to 1.0.
+    # By doing the below we can estimate it from a batch of data to calculate the SSIM
+    first_batch, _ = next(iter(val_dl))
+    data_range = float(first_batch.max() - first_batch.min())
+    print(f"Estimated data range for SSIM: {data_range:.4f}")
+    ssim_metric = StructuralSimilarityIndexMeasure(data_range=data_range).to(device)
+
     
