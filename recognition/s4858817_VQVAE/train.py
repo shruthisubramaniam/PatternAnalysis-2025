@@ -127,7 +127,35 @@ def main(args):
             train_loss_epoch += loss.item()
             pbar.set_postfix(total_loss=loss.item(), recon_loss=recon_loss.item(), vq_loss=vq_loss.item())
 
-            avg_train_loss = train_loss_epoch / len(train_dl)
-            history['train_loss'].append(avg_train_loss)
+        avg_train_loss = train_loss_epoch / len(train_dl)
+        history['train_loss'].append(avg_train_loss)
 
-    
+        # Creating the validation loop 
+        model.eval()
+        val_loss_epoch = 0.0
+        val_perplexity_epoch = 0.0
+        ssim_metric.reset()
+
+        pbar_val = tqdm(val_dl, desc=f"Epoch {epoch+1}/{args.epochs} [Val]")
+        with torch.no_grad():
+            for batch, _ in pbar_val:
+                batch = batch.to(device)
+                x_hat, vq_loss, perplexity = model(batch)
+
+                recon_loss = F.mse_loss(x_hat, batch)
+                loss = recon_loss + vq_loss
+
+                val_loss_epoch += loss.item()
+                val_perplexity_epoch += perplexity.item()
+                ssim_metric.update(x_hat, batch)
+                pbar_val.set_postfix(val_loss=loss.item(), perplexity=perplexity.item())
+        
+        avg_val_loss = avg_val_loss = val_loss_epoch / len(val_dl)
+        avg_val_perplexity = val_perplexity_epoch / len(val_dl)
+        epoch_ssim = ssim_metric.compute().item()
+
+        history['val_loss'].append(avg_val_loss)
+        history['val_ssim'].append(epoch_ssim)
+        history['val_perplexity'].append(avg_val_perplexity)
+
+        
