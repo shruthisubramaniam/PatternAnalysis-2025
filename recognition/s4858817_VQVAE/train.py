@@ -190,6 +190,32 @@ def main(args):
     # Visualising some reconstructions on test data 
     reconstruction_vs_original(model, test_dl, device, save_dir / "test_reconstructions.png")
 
+    # Creating the testing loop 
+    model.eval()
+    test_loss = 0.0
+    test_perplexity = 0.0
+    ssim_metric.reset()
+    pbar_test = tqdm(test_dl, desc="[Test]")
+    with torch.no_grad():
+        for batch, _ in pbar_test:
+            batch = batch.to(device)
+            x_hat, vq_loss, perplexity = model(batch)
+            recon_loss = F.mse_loss(x_hat, batch)
+            loss = recon_loss + vq_loss
+            test_loss += loss.item()
+            test_perplexity += perplexity.item()
+            ssim_metric.update(x_hat, batch)
     
+    avg_test_loss = test_loss / len(test_dl)
+    avg_test_perplexity = test_perplexity / len(test_dl)
+    final_test_ssim = ssim_metric.compute().item()
+
+    print("\n--- Final Test Results (using best model) ---")
+    print(f"Test Loss: {avg_test_loss:.4f}")
+    print(f"Test Perplexity: {avg_test_perplexity:.2f}")
+
+
+
+
 
 
