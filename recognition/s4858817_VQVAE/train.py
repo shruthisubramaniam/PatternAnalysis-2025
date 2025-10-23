@@ -91,7 +91,7 @@ def main(args):
     train_dl, val_dl, test_dl = get_dataloader(repo_root=args.repo_root, batch_size=args.batch_size, num_workers=args.num_workers)
 
     # Initialising the model, optimiser and metrics 
-    model = VQVAE(in_channels=1, base=args.model_base_channels, z_dim=args.z_dim, n_codes=args.n_code).to(device)
+    model = VQVAE(in_channels=1, base=args.model_base_channels, z_dim=args.z_dim, n_codes=args.n_codes).to(device)
 
     optimiser = Adam(model.parameters(), lr=args.lr)
 
