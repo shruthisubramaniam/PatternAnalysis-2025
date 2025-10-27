@@ -1,0 +1,7 @@
+name: comp3710
+channels:
+  - defaults
+dependencies:
+  - torchvision
+  - pytorch
+prefix: /Users/shruthisubramaniam/anaconda3/envs/comp3710

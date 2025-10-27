@@ -61,7 +61,8 @@ def reconstruction_vs_original(model, dataloader, device, save_path: Path, num_i
     with torch.no_grad():
         reconstructions, _, _ = model(images)
 
-    images = images.cpu().numpy()
+    images = images.detach().cpu().numpy()
+    reconstructions = reconstructions.detach().cpu().numpy()
 
     fig, axes = plt.subplots(2, num_images, figsize = (num_images * 2, 4))
     for i in range (num_images):
