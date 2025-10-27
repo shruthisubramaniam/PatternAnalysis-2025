@@ -193,6 +193,13 @@ def main(args):
 
     print("\nTraining complete.")
 
+    # Saving metrics to CSV
+    history_df = pd.DataFrame(history)
+    history_df.insert(0, 'epoch', range(1, len(history_df) + 1))
+    csv_path = save_dir / "training_metrics.csv"
+    history_df.to_csv(csv_path, index=False)
+    print(f"Training metrics saved to {csv_path}")
+
     # Calling the plots
     plot_metrics(
         save_dir, 
