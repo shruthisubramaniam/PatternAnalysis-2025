@@ -93,4 +93,33 @@ def generation_function(model, dataloader, device, output_dir, num_images=8):
     print(f"Generations saved to: {save_path}")
     plt.close()
 
+def main(args):
+    device = torch.device(args.device if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+    output_dir = Path(args.model_path)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    model_path = Path(args.model_path)
+    if not model_path.exists():
+        print(f"Error: Model file not found at {model_path}")
+        return
+    
+    # Producing the model with the same training hyper-parameters 
+    model = VQVAE(in_channels=1,base=args.model_base_channels,z_dim=args.z_dim,n_codes=args.n_codes).to(device)
+
+    # Weights (trained) to load 
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    print(f"Model loaded successfully from {model_path}")
+
+    test_ds = SliceDataset(args.input_data_dir, split="test")
+    test_dl = torch.utils.data.DataLoader(test_ds, batch_size=args.num_examples, shuffle=True)
+
+    # Calling the two functions 
+    reconstruction_function(model, test_dl, device, output_dir, num_images=args.num_examples)
+    generation_function(model, test_dl, device, output_dir, num_images=args.num_examples)
+
+    print("Predictions finished")
+
+    
+
+
 
