@@ -76,7 +76,21 @@ def generation_function(model, dataloader, device, output_dir, num_images=8):
         # To get the generative images I am decoding the random latent codes 
         generated_images = model.decoder(z_q) 
 
+    # Pulling images for plotting to CPU or Numpy 
+    generated_images_np = generated_images.cpu().numpy()
 
-
+    # Plots
+    fig, axes = plt.subplots(1, num_images, figsize=(num_images * 2, 2.5))
+    fig.suptitle('Generative Examples from Random Latent Codes', fontsize=16)
+    for i in range(num_images):
+        axes[i].imshow(generated_images_np[i, 0], cmap='gray')
+        axes[i].set_title(f"Generated {i+1}")
+        axes[i].axis('off')
+    
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    save_path = output_dir / "prediction_generative_examples.png"
+    plt.savefig(save_path)
+    print(f"Generations saved to: {save_path}")
+    plt.close()
 
 
