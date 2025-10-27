@@ -30,7 +30,24 @@ def reconstruction_function(model, dataloader, device, output_dir, num_images = 
     images_np = images.cpu().numpy()
     reconstructions_np = reconstructions.cpu().numpy()
 
-    
+    # Plots
+    fig, axes = plt.subplots(2, num_images, figsize=(num_images * 2, 4.5))
+    fig.suptitle(f'Reconstruction Examples (SSIM: {batch_ssim:.4f})', fontsize=16)
+
+    for i in range(num_images):
+        axes[0, i].imshow(images_np[i, 0], cmap='gray')
+        axes[0, i].set_title(f"Original {i+1}")
+        axes[0, i].axis('off')
+
+        axes[1, i].imshow(reconstructions_np[i, 0], cmap='gray')
+        axes[1, i].set_title(f"Recon {i+1}")
+        axes[1, i].axis('off')
+
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    save_path = output_dir / "prediction_reconstruction_examples.png"
+    plt.savefig(save_path)
+    print(f"Reconstructions saved to: {save_path}")
+    plt.close()
 
 
 
