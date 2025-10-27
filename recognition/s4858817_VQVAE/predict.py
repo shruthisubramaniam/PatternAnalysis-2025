@@ -119,7 +119,22 @@ def main(args):
 
     print("Predictions finished")
 
-    
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Use a trained VQ-VAE for reconstruction and generation.")
+
+    parser.add_argument("--model_path", type=str, required=True, help="Path to the trained model (.pth file).")
+    parser.add_argument("--input_data_dir", type=str, default=".", help="Path to the root of the dataset repository.")
+    parser.add_argument("--output_dir", type=str, default="./predictions", help="Directory to save the output visualizations.")
+
+    parser.add_argument("--num_examples", type=int, default=8, help="Number of images to reconstruct/generate.")
+    parser.add_argument("--device", type=str, default="cuda", help="Device to use ('cuda' or 'cpu').")
+
+    parser.add_argument("--model_base_channels", type=int, default=64, help="Number of base channels in the VQ-VAE.")
+    parser.add_argument("--z_dim", type=int, default=128, help="Dimension of the latent embeddings.")
+    parser.add_argument("--n_codes", type=int, default=512, help="Number of codes in the VQ codebook.")
+
+    args = parser.parse_args()
+    main(args)
 
 
 
