@@ -9,6 +9,7 @@ from tqdm import tqdm
 from torchmetrics.image import StructuralSimilarityIndexMeasure
 from dataset import get_dataloader
 from modules import VQVAE
+import pandas as pd 
 
 # Creating a function that will obtain the plots and saves the training and 
 # validation metrics. 
@@ -106,6 +107,10 @@ def main(args):
     history = {'train_loss': [], 'val_loss': [], 'val_ssim': [], 'val_perplexity': []}
     best_ssim = -1.0
 
+    # patience tracker
+    patience = 8
+    patience_counter = 0
+
     # Defining the training loop
     print("Starting training")
     for epoch in range (args.epochs):
@@ -171,6 +176,15 @@ def main(args):
             model_path = save_dir / "best_model.pth"
             torch.save(model.state_dict(), model_path)
             print(f"SSIM and saved new best model: {best_ssim:.4f} at {model_path}")
+
+            patience_counter = 0
+
+        else:
+            patience_counter += 1
+            print(f"No improvement in Val SSIM for {patience_counter} epoch(s). Patience: {patience_counter}/{patience}")
+            if patience_counter >= patience:
+                print(f"EARLY STOPPING: Stopping training after {patience} epochs with no improvement.")
+                break
 
     print("\nTraining complete.")
 

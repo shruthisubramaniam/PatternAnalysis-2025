@@ -1,5 +1,5 @@
 # Command line to run predict.py below 
-# predict.py --model_path /Users/shruthisubramaniam/Desktop/best_model.pth
+# python predict.py --model_path /Users/shruthisubramaniam/Desktop/best_model.pth
 
 import argparse
 from pathlib import Path
