@@ -70,7 +70,11 @@ def generation_function(model, dataloader, device, output_dir, num_images=8):
     random_indices = torch.randint(low=0, high=num_codes, 
                                    size=(num_images, latent_height, latent_width),
                                    device=device)
-    
+    with torch.no_grad():
+        z_q = model.quantizer.embedding(random_indices) # Shape: (B, H, W, D)
+        z_q = z_q.permute(0, 3, 1, 2) # Reshape to (B, D, H, W) for the decoder
+        # To get the generative images I am decoding the random latent codes 
+        generated_images = model.decoder(z_q) 
 
 
 
