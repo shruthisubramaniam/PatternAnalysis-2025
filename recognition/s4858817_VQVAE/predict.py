@@ -18,7 +18,13 @@ def reconstruction_function(model, dataloader, device, output_dir, num_images = 
     images, paths = next(iter(dataloader))
     images = images[:num_images].to(device)
     with torch.no_grad():
-        reconstruction, _, _ = model(images)
+        reconstructions, _, _ = model(images)
+    
+    # Obtaining the SSIM for the batch 
+    data_range = float(images.max() - images.min())
+    ssim_metric = StructuralSimilarityIndexMeasure(data_range=data_range).to(device)
+    batch_ssim = ssim_metric(reconstructions, images).item()
+    print(f"SSIM for batch of {num_images} images: {batch_ssim:.4f}")
 
     
 
