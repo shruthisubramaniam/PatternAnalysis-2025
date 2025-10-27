@@ -185,6 +185,11 @@ def main(args):
             if patience_counter >= patience:
                 print(f"EARLY STOPPING: Stopping training after {patience} epochs with no improvement.")
                 break
+        
+        if (epoch + 1) % 10 == 0:
+            checkpoint_path = save_dir / f"model_epoch_{epoch+1}.pth"
+            torch.save(model.state_dict(), checkpoint_path)
+            print(f"Saved periodic checkpoint at epoch {epoch+1} to {checkpoint_path}")
 
     print("\nTraining complete.")
 
