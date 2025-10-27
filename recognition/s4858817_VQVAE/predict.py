@@ -96,7 +96,7 @@ def generation_function(model, dataloader, device, output_dir, num_images=8):
 def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
-    output_dir = Path(args.model_path)
+    output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     model_path = Path(args.model_path)
     if not model_path.exists():
