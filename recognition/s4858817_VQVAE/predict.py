@@ -65,6 +65,14 @@ def generation_function(model, dataloader, device, output_dir, num_images=8):
     latent_height, latent_width = H, W
     print(f"Latent space grid size: {latent_height}x{latent_width}")
 
+    # Producing a batch of random latent indices
+    num_codes = model.quantizer.num_embeddings
+    random_indices = torch.randint(low=0, high=num_codes, 
+                                   size=(num_images, latent_height, latent_width),
+                                   device=device)
+    
+
+
 
 
 
