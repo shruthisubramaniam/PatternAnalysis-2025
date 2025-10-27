@@ -26,6 +26,10 @@ def reconstruction_function(model, dataloader, device, output_dir, num_images = 
     batch_ssim = ssim_metric(reconstructions, images).item()
     print(f"SSIM for batch of {num_images} images: {batch_ssim:.4f}")
 
+    # Pulling images for plotting to CPU or Numpy 
+    images_np = images.cpu().numpy()
+    reconstructions_np = reconstructions.cpu().numpy()
+
     
 
 
