@@ -50,4 +50,21 @@ def reconstruction_function(model, dataloader, device, output_dir, num_images = 
     plt.close()
 
 
+def generation_function(model, dataloader, device, output_dir, num_images=8):
+    print("Running Generative Demonstration")
+    model.eval()
+
+    # Obtaining latent space shape by encoding an image that is real
+    sample_image, _ = next(iter(dataloader))
+    sample_image = sample_image[:1].to(device)
+    with torch.no_grad():
+        z_e = model.encoder(sample_image)
+        _, _, _, latent_indices = model.quantizer(z_e)
+    
+    B, W, H = latent_indices.shape
+    latent_height, latent_width = H, W
+    print(f"Latent space grid size: {latent_height}x{latent_width}")
+
+
+
 
