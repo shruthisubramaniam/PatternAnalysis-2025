@@ -58,7 +58,7 @@ PyTorch (torch, torch.nn, torch.nn.functional)
 
 Note:
 ChatGPT was used to aid in the development of this file
-prompt: "Here is my dataset.py file. Based on this please build PyTorch modules 
+Prompt: "Here is my dataset.py file. Based on this please build PyTorch modules 
 for a VQ-VAE suitable for 2D HipMRI slices (encoder/decoder, vector quantizer 
 with straight-through estimator) that returns reconstruction, VQ loss, and perplexity."
 """

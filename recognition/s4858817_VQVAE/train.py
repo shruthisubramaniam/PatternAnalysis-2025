@@ -47,7 +47,7 @@ PyTorch, torchmetrics (SSIM), tqdm, matplotlib, pandas, dataset.py, modules.py.
 
 Note:
 ChatGPT was used to aid in the development of this file
-prompt: "Here is my dataset.py file an my modules.py file. Based on these files please train the VQVAE 
+Prompt: "Here is my dataset.py file an my modules.py file. Based on these files please train the VQVAE 
 such that we satify the criteria, "“train.py" containing the source code for training, validating, testing and saving your model. The model
 should be imported from “modules.py” and the data loader should be imported from “dataset.py”. Make
 sure to plot the losses and metrics during training"

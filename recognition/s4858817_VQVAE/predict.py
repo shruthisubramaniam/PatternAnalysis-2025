@@ -1,5 +1,46 @@
-# Command line to run predict.py below 
-# python predict.py --model_path /Users/shruthisubramaniam/Desktop/best_model.pth
+"""
+This Python program uses a trained VQ-VAE to do reconstruction inference 
+on 2D slices of hipMRI prostate cancer.
+
+Project Objective:
+Using processed 2D slices, create a generative VQVAE or VQVAE2 model 
+for the HipMRI Study on Prostate Cancer.
+
+Goal:
+Produce "reasonably clear images" and achieve Structural Similarity (SSIM) ≥ 0.6.
+
+Purpose of predict.py
+- Load the trained VQVAE at the best checkpoint.
+- Draw a small batch from the test split and reconstruct it.
+- Compute a single batch SSIM.
+- Save a grid image comparing originals versus reconstructions.
+
+What this code does:
+1) Reconstruction function 
+Gets one test batch (up to num_examples), runs model forward,
+computes SSIM for the batch, and saves a 2xN PNG grid.
+
+2) Main function 
+It loads the checkpoint weights, creates the test loader, executes the 
+reconstruction function, parses CLI arguments, and builds the model using 
+training hyperparameters.
+
+Shapes:
+Input/Output tensors are [B, 1, H, W] (float32)
+
+CLI:
+python predict.py --model_path /path/to/best_model.pth --input_data_dir 
+/path/to/repo --num_examples 8
+
+Dependencies:
+PyTorch, torchmetrics (SSIM), matplotlib, modules.py (VQVAE), 
+dataset.py (SliceDataset)
+
+Note:
+ChatGPT was used to aid in the development of this file
+Prompt: "Here is my dataset.py, modules.py and train.py, based on this can you help me 
+reconstruct images based on the test set"
+"""
 
 import argparse
 from pathlib import Path
@@ -12,6 +53,36 @@ from modules import VQVAE
 from dataset import SliceDataset 
 
 def reconstruction_function(model, dataloader, device, output_dir, num_images = 8):
+    """
+    Reconstruct a small batch from the test set. Takes the first batch from `dataloader`, reconstructs up to `num_images`
+    images with a trained VQ-VAE, computes a single SSIM score for that subset,
+    and saves a 2xN grid comparing originals (top) vs reconstructions (bottom).
+
+    Parameters:
+    model (torch.nn.Module):
+        Trained VQ-VAE model. This function switches it to eval mode and runs inference
+        under `torch.no_grad()`.
+    dataloader (torch.utils.data.DataLoader):
+        DataLoader for the **test** split. Must yield `(images, paths)` where `images`
+        is a float tensor of shape `[B, 1, H, W]` (z-scored as in dataset.py).
+    device (torch.device or str):
+        Device for inference, e.g. `'cuda'` or `'cpu'`.
+    output_dir (str or pathlib.Path):
+        Directory to write the output PNG (`prediction_reconstruction_examples.png`).
+    num_images (int, optional):
+        Number of examples (columns) to include from the first batch. Defaults to 8.
+
+    Returns:
+    None
+        Saves `prediction_reconstruction_examples.png` in `output_dir`, and prints a
+        single batch SSIM computed using the batch’s dynamic range
+        (`images.max() - images.min()`).
+
+    Raises:
+    StopIteration:
+        If `dataloader` is empty (no batches available).
+
+    """
     print("Running Reconstruction Demonstration")
     model.eval()
     # Obtaining from the test set one batch of data 
@@ -49,51 +120,29 @@ def reconstruction_function(model, dataloader, device, output_dir, num_images = 
     print(f"Reconstructions saved to: {save_path}")
     plt.close()
 
-
-def generation_function(model, dataloader, device, output_dir, num_images=8):
-    print("Running Generative Demonstration")
-    model.eval()
-
-    # Obtaining latent space shape by encoding an image that is real
-    sample_image, _ = next(iter(dataloader))
-    sample_image = sample_image[:1].to(device)
-    with torch.no_grad():
-        z_e = model.encoder(sample_image)
-        _, _, _, latent_indices = model.quantizer(z_e)
-    
-    B, W, H = latent_indices.shape
-    latent_height, latent_width = H, W
-    print(f"Latent space grid size: {latent_height}x{latent_width}")
-
-    # Producing a batch of random latent indices
-    num_codes = model.quantizer.num_embeddings
-    random_indices = torch.randint(low=0, high=num_codes, 
-                                   size=(num_images, latent_height, latent_width),
-                                   device=device)
-    with torch.no_grad():
-        z_q = model.quantizer.embedding(random_indices) # Shape: (B, H, W, D)
-        z_q = z_q.permute(0, 3, 1, 2) # Reshape to (B, D, H, W) for the decoder
-        # To get the generative images I am decoding the random latent codes 
-        generated_images = model.decoder(z_q) 
-
-    # Pulling images for plotting to CPU or Numpy 
-    generated_images_np = generated_images.cpu().numpy()
-
-    # Plots
-    fig, axes = plt.subplots(1, num_images, figsize=(num_images * 2, 2.5))
-    fig.suptitle('Generative Examples from Random Latent Codes', fontsize=16)
-    for i in range(num_images):
-        axes[i].imshow(generated_images_np[i, 0], cmap='gray')
-        axes[i].set_title(f"Generated {i+1}")
-        axes[i].axis('off')
-    
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
-    save_path = output_dir / "prediction_generative_examples.png"
-    plt.savefig(save_path)
-    print(f"Generations saved to: {save_path}")
-    plt.close()
-
 def main(args):
+    """
+    This function will load a trained VQ-VAE, reconstruct a small test batch,
+    compute SSIM for that subset, and save a comparison grid.
+
+        Parameters:
+        args (argparse.Namespace):
+            Parsed CLI arguments with the following fields:
+              - model_path (str): Path to the trained model file.
+              - input_data_dir (str): Path to the repository root containing the dataset folder.
+              - output_dir (str): Directory to save the output PNG grid.
+              - num_examples (int): Number of images to reconstruct and plot.
+              - device (str): Requested device string, 'cuda' or 'cpu'. If 'cuda'
+                is requested but not available, CPU is used automatically.
+              - model_base_channels (int): Base channel width used for encoder/decoder.
+              - z_dim (int): Latent channel width/embedding dimension.
+              - n_codes (int): Size of the VQ codebook.
+        
+        Returns:
+        None
+            Loads weights, builds a test DataLoader, runs reconstruction_function, and exits.
+    """
+
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     output_dir = Path(args.output_dir)
@@ -110,13 +159,12 @@ def main(args):
     model.load_state_dict(torch.load(model_path, map_location=device))
     print(f"Model loaded successfully from {model_path}")
 
+    # Dataset/loader (Test)
     test_ds = SliceDataset(args.input_data_dir, split="test")
     test_dl = torch.utils.data.DataLoader(test_ds, batch_size=args.num_examples, shuffle=True)
 
-    # Calling the two functions 
+    # Calling the reconstruction function 
     reconstruction_function(model, test_dl, device, output_dir, num_images=args.num_examples)
-    generation_function(model, test_dl, device, output_dir, num_images=args.num_examples)
-
     print("Predictions finished")
 
 if __name__ == "__main__":

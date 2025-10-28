@@ -66,7 +66,7 @@ Python 3.10, numpy, nibabel, torch, matplotlib
 
 Note:
 ChatGPT was used to aid in the development of this file
-prompt: "My dataset is the HipMRI processed 2D slices found on my desktop. 
+Prompt: "My dataset is the HipMRI processed 2D slices found on my desktop. 
 Please develop code that will contain the data loader for loading and preprocessing the data"
 """
 # Obtaining imports  
