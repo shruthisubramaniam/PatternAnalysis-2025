@@ -1,3 +1,58 @@
+"""
+This python file trains/evaluates a VQ-VAE to examine HipMRI Prostate Cancer.
+
+Project Objective:
+Develop a generative VQVAE or VQVAE2 model for the HipMRI Study on Prostate Cancer
+using processed 2D slices.
+
+Goal:
+Produce "reasonably clear images" and achieve Structural Similarity (SSIM) ≥ 0.6.
+
+Purpose of train.py:
+- Construct train/validation/test DataLoaders (from dataset.py).
+- Call VQVAE (from modules.py) and optimize with Adam.
+- Keep track of losses, SSIM, and codebook perplexity; save best model by validation SSIM.
+- Export plots and a CSV log; visualize reconstructions on the test set.
+
+What the code does:
+1) Metrics and plotting utilities
+Creates plots such as validation SSIM plot, loss curves and reconstruction vs original plots
+
+2) Training loop 
+- Forward pass: x → VQVAE → (x_hat, vq_loss, perplexity).
+- Loss = MSE reconstruction + VQ loss; optimize with Adam
+- Aggregates epoch averages and logs per-batch totals using tqdm.
+
+3) Validation loop
+Calculates validation loss, mean perplexity, and SSIM.
+
+4) Model selection and early stopping
+- Tracks best Val SSIM; saves best_model.pth when improved.
+- Early stopping on SSIM with patience = 8; periodic checkpoints every 10 epochs.
+
+5) Exporting results
+- Saves metric results to training_metrics.csv and plots to the save directory.
+- A test reconstruction panel is saved after training, best_model.pth is reloaded, 
+and a final test loop (which returns loss and perplexity) is executed.
+
+Shapes:
+Input tensors from dataset.py - [B, 1, H, W] (float32; z-scored per slice).
+Model latent - [B, z_dim, H/8, W/8]; indices: [B, H/8, W/8].
+
+CLI:
+python train.py --repo_root /path/to/repo --save_dir ./results --epochs 50 --batch_size 32
+
+Dependencies:
+PyTorch, torchmetrics (SSIM), tqdm, matplotlib, pandas, dataset.py, modules.py.
+
+Note:
+ChatGPT was used to aid in the development of this file
+prompt: "Here is my dataset.py file an my modules.py file. Based on these files please train the VQVAE 
+such that we satify the criteria, "“train.py" containing the source code for training, validating, testing and saving your model. The model
+should be imported from “modules.py” and the data loader should be imported from “dataset.py”. Make
+sure to plot the losses and metrics during training"
+"""
+# Obtaining imports
 from __future__ import annotations
 from pathlib import Path
 import argparse
@@ -13,7 +68,6 @@ import pandas as pd
 
 # Creating a function that will obtain the plots and saves the training and 
 # validation metrics. 
-
 def plot_metrics(save_dir: Path, train_losses, val_losses, val_ssims, val_perplexities):
     epochs = range(1, len(train_losses) + 1)
 
@@ -52,18 +106,23 @@ def plot_metrics(save_dir: Path, train_losses, val_losses, val_ssims, val_perple
 
     print (f"Plots saved to {save_dir}")
 
-# Creating a fucntion that will help to compare the original images versus the reconstructed images
+# Creating a fucntion that will help to compare the original images 
+# versus the reconstructed images
 def reconstruction_vs_original(model, dataloader, device, save_path: Path, num_images = 8):
     model.eval()
-    images, _ = next(iter(dataloader))
-    images = images[:num_images].to(device)
+    images, _ = next(iter(dataloader)) # Taking one batch 
+    images = images[:num_images].to(device) # limiting to num_images columns
 
+    # Forward without grad to get reconstructions
     with torch.no_grad():
         reconstructions, _, _ = model(images)
 
+    # Moving to CPU numpy for matplotlib
     images = images.detach().cpu().numpy()
     reconstructions = reconstructions.detach().cpu().numpy()
 
+    # Producing two rows where the originals are the top and the 
+    # reconstructions are at the bottom
     fig, axes = plt.subplots(2, num_images, figsize = (num_images * 2, 4))
     for i in range (num_images):
         # Displaying the original images
@@ -117,22 +176,28 @@ def main(args):
     for epoch in range (args.epochs):
         model.train()
         train_loss_epoch = 0.0
+        # Train loop with progress bar and per-batch logging
         pbar = tqdm(train_dl, desc=f"Epoch {epoch+1}/{args.epochs} [Train]")
         for batch, _ in pbar:
             batch = batch.to(device)
             optimiser.zero_grad()
 
+            # Forward through VQVAE giving reconstructions, VQ loss
             x_hat, vq_loss, _ = model(batch)
 
+            # Total loss = reconstruction + VQ loss
             recon_loss = F.mse_loss(x_hat, batch)
             loss = recon_loss + vq_loss
 
+            # Backprop + update
             loss.backward()
             optimiser.step()
-
+            
+            # Accumulating loss for epoch average and show in progress bar
             train_loss_epoch += loss.item()
             pbar.set_postfix(total_loss=loss.item(), recon_loss=recon_loss.item(), vq_loss=vq_loss.item())
 
+        # Average training loss per epoch
         avg_train_loss = train_loss_epoch / len(train_dl)
         history['train_loss'].append(avg_train_loss)
 
@@ -140,7 +205,7 @@ def main(args):
         model.eval()
         val_loss_epoch = 0.0
         val_perplexity_epoch = 0.0
-        ssim_metric.reset()
+        ssim_metric.reset()  # Resetting running SSIM metric per epoch
 
         pbar_val = tqdm(val_dl, desc=f"Epoch {epoch+1}/{args.epochs} [Val]")
         with torch.no_grad():
@@ -148,18 +213,22 @@ def main(args):
                 batch = batch.to(device)
                 x_hat, vq_loss, perplexity = model(batch)
 
+                # Validation total loss
                 recon_loss = F.mse_loss(x_hat, batch)
                 loss = recon_loss + vq_loss
 
                 val_loss_epoch += loss.item()
                 val_perplexity_epoch += perplexity.item()
+
+                # Accumulating SSIM across the whole val set
                 ssim_metric.update(x_hat, batch)
                 pbar_val.set_postfix(val_loss=loss.item(), perplexity=perplexity.item())
         
-        avg_val_loss = avg_val_loss = val_loss_epoch / len(val_dl)
-        avg_val_perplexity = val_perplexity_epoch / len(val_dl)
-        epoch_ssim = ssim_metric.compute().item()
-
+        avg_val_loss = avg_val_loss = val_loss_epoch / len(val_dl) # Average validation loss per epoch
+        avg_val_perplexity = val_perplexity_epoch / len(val_dl) # Average perplexity per epoch
+        epoch_ssim = ssim_metric.compute().item() # SSIM for the epoch 
+        
+        # Record metrics for plotting/CSV
         history['val_loss'].append(avg_val_loss)
         history['val_ssim'].append(epoch_ssim)
         history['val_perplexity'].append(avg_val_perplexity)
@@ -186,7 +255,7 @@ def main(args):
             if patience_counter >= patience:
                 print(f"EARLY STOPPING: Stopping training after {patience} epochs with no improvement.")
                 break
-        
+        # Checkpoint for every 10 epochs
         if (epoch + 1) % 10 == 0:
             checkpoint_path = save_dir / f"model_epoch_{epoch+1}.pth"
             torch.save(model.state_dict(), checkpoint_path)
@@ -241,7 +310,7 @@ def main(args):
     print(f"Test Loss: {avg_test_loss:.4f}")
     print(f"Test Perplexity: {avg_test_perplexity:.2f}")
 
-# Calling the main function 
+# CLI entry point and args 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a VQ-VAE model on 2D MRI slices.")
     parser.add_argument("--repo_root", type=str, default=".", help="Root directory of the repository containing the 'dataset' folder.")
