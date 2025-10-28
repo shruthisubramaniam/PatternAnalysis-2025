@@ -1,13 +1,13 @@
 """
-This python file is the dataset utilities for building a VQVAE to examine
-HipMRI Prostate Cancer 
-
-Project Objective:
+Overall Project Objective:
 Develop a generative VQVAE or VQVAE2 model for the HipMRI Study on Prostate Cancer 
 using processed 2D slices. 
 
 Goal:
 Produce "reasonably clear images" and a structured Similarity (SSIM) of over 0.6
+
+This python file is the dataset utilities for building a VQVAE to examine
+HipMRI Prostate Cancer 
 
 Purpose of dataset.py:
 - Discover, load, optionally z-score, and batch variable-sized 2D slices
@@ -30,7 +30,7 @@ Squeeze if HxWx1, remove the central slice if HxWxD, and leave as is if HxW. Thi
 in order to maintain sample comparability, the model is trained on 2D slices.
 
 4) Conduct z-score normalisation 
-(x − mean) / (std + 1e-6); if std==0, just center. This is so that the 
+(x - mean) / (std + 1e-6); if std==0, just center. This is so that the 
 learning and optimisation of the VQ-VAE codebook are stabilised by standardised inputs (mean≈0, std≈1).
 
 5) Return tensors as [1, H, W]
@@ -46,12 +46,12 @@ scaling or blurring thin structures.
 Return a 1x1 zero array rather than raising on any I/O/format error. This is to 
 stop a single faulty file from causing training crashes; you may log or filter afterward.
 
-Expected layout (relative to `repo_root`):
+Expected layout (relative to repo_root):
 repo_root/
   └─ dataset/
      ├─ keras_slices_train/
      ├─ keras_slices_validate/
-     └─ keras_slices_test/      # files: *.nii | *.nii.gz | *.npy
+     └─ keras_slices_test/ # files: *.nii | *.nii.gz | *.npy
 
 Shapes:
 Sample tensor - [1, H, W] (float32)
@@ -62,7 +62,7 @@ python dataset.py --repo_root /path/to/repo
 This is to see number of samples in each set
 
 Dependencies:
-Python 3.10, numpy, nibabel, torch, matplotlib
+Python 3.12.11, numpy, nibabel, torch, matplotlib
 
 Note:
 ChatGPT was used to aid in the development of this file
@@ -95,6 +95,14 @@ def _discover(split_dir: Path) -> List[Path]:
     """
     Under split_dir, return a sorted list of files with permitted extensions.
     Deterministic ordering between runs is guaranteed via sorting.
+
+    Parameters:
+    split_dir : pathlib.Path
+        Directory containing slice files for one split. 
+    
+    Returns:
+    list[pathlib.Path]
+        Sorted list of file paths. 
     """
     files: List[Path] = []
     for ext in IMG_EXTS:
@@ -112,6 +120,16 @@ def _zscore(x: np.ndarray, eps: float = 1e-6) -> np.ndarray:
     """
     Per-slice z-score normalization: (x - mean) / (std + eps).
     If std == 0, we just mean-center to avoid division by zero.
+
+    Parameters:
+    x : np.ndarray
+        2D array of shape [H, W].
+    esp: float
+        small constant to avoid division by zero.
+    
+    Returns:
+    np.ndarray
+        Normalized array of shape [H, W] and dtype float32.
     """
     m, s = float(x.mean()), float(x.std())
     return (x - m) / (s + eps) if s > 0 else x - m
@@ -120,6 +138,16 @@ def _load_slice(p: Path) -> np.ndarray:
     """
     Handle both.npy and.nii/.nii.gz files by loading a single 2D slice as float32. -.npy: 
     squeeze singleton dims; if still >2D, retain the first channel.
+
+    Parameters:
+    p : pathlib.Path
+        Path to the file to load.
+    
+    Returns:
+    np.ndarray
+        2D array with dtype float32 and form [H, W]. The centre slice along D is 
+        returned for 3D inputs (HxWxD). The channel is compressed for arrays with a 
+        trailing singleton channel (HxWx1).
     """
     try:
         if p.suffix == ".npy":
@@ -149,6 +177,15 @@ def _load_slice(p: Path) -> np.ndarray:
 def pad_collate(batch):
     """
     Use a custom collate method to aggregate slices of varying sizes.
+
+    Parameters:
+    batch (torch.Tensor, str):
+        Each tensor has shape [1, H, W] (channel-first grayscale)
+    
+    Returns:
+    (torch.Tensor, list[str]):
+        - Padded batch tensor of shape [B, 1, Hmax, Wmax] (padded on right/bottom).
+        - List of original path strings in the same order.
     """
     # batch: list[(tensor[1,H,W], path)]
     xs, paths = zip(*batch)
@@ -170,6 +207,18 @@ class SliceDataset(Dataset):
     Points to the dataset at repo_root/\split_subdir>
     Valid files are found and loaded as 2D float32 
     Returns path_string and tensor[1,H,W].
+
+    Parameters:
+    repo_root: str or pathlib.Path
+        Repository root containing the dataset directory with split subfolders.
+    split: {'train','val','test'}
+        Which split to use. 
+    normalization: {'zscore', None}
+        If z-score is applied, default is z-score
+    
+    Returns:
+    From __getitem__ (torch.Tensor, str)
+        Tensor of shape [1, H, W] (float32) and the corresponding file path string.
     """
 
     def __init__(self, repo_root: str | Path, split: str = "train", normalization: str = "zscore"):
@@ -183,7 +232,17 @@ class SliceDataset(Dataset):
         return len(self.files)
 
     def __getitem__(self, idx: int):
-        # Loading array as HxW float32
+        """
+        Loading array as HxW float32
+
+        Parameters:
+        idx: int
+            Index into the discovered file list.
+        
+        Returns:
+        (torch.Tensor, str)
+            x: tensor [1, H, W] (float32), path: file path string.
+        """
         p = self.files[idx]
         arr = _load_slice(p) # np.ndarray HxW float32
         if self.normalization == "zscore":
@@ -200,6 +259,20 @@ def get_dataloader(
 ): 
     """
     Building DataLoaders for train/val/test splits
+
+    Parameters:
+    repo_root: str or pathlib.Path
+        Repository root containing the dataset directory with split subfolders.
+    batch_size: int
+        Number of samples per batch.
+    num_workers: int
+        Data-loading worker processes.
+    normalization: {'zscore', None}
+        Normalization mode for each split dataset.
+    
+    Returns:
+    torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader)
+        Train, validation, and test dataloaders. 
     """
     train_ds = SliceDataset(repo_root, "train", normalization)
     val_ds   = SliceDataset(repo_root, "val",   normalization)

@@ -2,13 +2,6 @@
 This Python program uses a trained VQ-VAE to do reconstruction inference 
 on 2D slices of hipMRI prostate cancer.
 
-Project Objective:
-Using processed 2D slices, create a generative VQVAE or VQVAE2 model 
-for the HipMRI Study on Prostate Cancer.
-
-Goal:
-Produce "reasonably clear images" and achieve Structural Similarity (SSIM) ≥ 0.6.
-
 Purpose of predict.py
 - Load the trained VQVAE at the best checkpoint.
 - Draw a small batch from the test split and reconstruct it.
@@ -38,8 +31,8 @@ dataset.py (SliceDataset)
 
 Note:
 ChatGPT was used to aid in the development of this file
-Prompt: "Here is my dataset.py, modules.py and train.py, based on this can you help me 
-reconstruct images based on the test set"
+Prompt: "Here is my dataset.py, modules.py and train.py, 
+based on this can you help me reconstruct images based on the test set"
 """
 
 import argparse

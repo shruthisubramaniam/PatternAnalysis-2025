@@ -1,13 +1,6 @@
 """
 This python file trains/evaluates a VQ-VAE to examine HipMRI Prostate Cancer.
 
-Project Objective:
-Develop a generative VQVAE or VQVAE2 model for the HipMRI Study on Prostate Cancer
-using processed 2D slices.
-
-Goal:
-Produce "reasonably clear images" and achieve Structural Similarity (SSIM) ≥ 0.6.
-
 Purpose of train.py:
 - Construct train/validation/test DataLoaders (from dataset.py).
 - Call VQVAE (from modules.py) and optimize with Adam.
@@ -19,7 +12,7 @@ What the code does:
 Creates plots such as validation SSIM plot, loss curves and reconstruction vs original plots
 
 2) Training loop 
-- Forward pass: x → VQVAE → (x_hat, vq_loss, perplexity).
+- Forward pass: x passes into VQVAE to then produce (x_hat, vq_loss, perplexity).
 - Loss = MSE reconstruction + VQ loss; optimize with Adam
 - Aggregates epoch averages and logs per-batch totals using tqdm.
 
@@ -32,7 +25,7 @@ Calculates validation loss, mean perplexity, and SSIM.
 
 5) Exporting results
 - Saves metric results to training_metrics.csv and plots to the save directory.
-- A test reconstruction panel is saved after training, best_model.pth is reloaded, 
+- A test reconstruction panel is saved after training, best_model.pth is reloaded, 
 and a final test loop (which returns loss and perplexity) is executed.
 
 Shapes:
@@ -48,9 +41,9 @@ PyTorch, torchmetrics (SSIM), tqdm, matplotlib, pandas, dataset.py, modules.py.
 Note:
 ChatGPT was used to aid in the development of this file
 Prompt: "Here is my dataset.py file an my modules.py file. Based on these files please train the VQVAE 
-such that we satify the criteria, "“train.py" containing the source code for training, validating, testing and saving your model. The model
-should be imported from “modules.py” and the data loader should be imported from “dataset.py”. Make
-sure to plot the losses and metrics during training"
+such that we satify the criteria, "“train.py" containing the source code for training, validating, 
+testing and saving your model. The model should be imported from “modules.py” and the data 
+loader should be imported from “dataset.py”. Make sure to plot the losses and metrics during training"
 """
 # Obtaining imports
 from __future__ import annotations
@@ -66,9 +59,31 @@ from dataset import get_dataloader
 from modules import VQVAE
 import pandas as pd 
 
-# Creating a function that will obtain the plots and saves the training and 
-# validation metrics. 
+ 
 def plot_metrics(save_dir: Path, train_losses, val_losses, val_ssims, val_perplexities):
+    """
+    Creating a function that will obtain the plots and saves the training and 
+    validation metrics.
+
+    Parameters:
+    save_dir: pathlib.Path
+        Directory where plots will be saved.
+    train_losses: list[float]
+        Per-epoch average training loss (MSE + VQ loss).
+    val_losses: list[float]
+        Per-epoch average validation loss (MSE + VQ loss).
+    val_ssims: list[float]
+        Per-epoch validation SSIM scores.
+    val_perplexities: list[float]
+        Per-epoch average codebook perplexity.
+
+    Returns:
+    None
+    Saves three PNGs into save_dir:
+        - lost_plot.png (total loss curves) 
+        - validation_ssim_plot.png
+        - validation_perplexity_plot.png
+    """
     epochs = range(1, len(train_losses) + 1)
 
     # Plotting the total loss 
@@ -106,9 +121,28 @@ def plot_metrics(save_dir: Path, train_losses, val_losses, val_ssims, val_perple
 
     print (f"Plots saved to {save_dir}")
 
-# Creating a fucntion that will help to compare the original images 
-# versus the reconstructed images
 def reconstruction_vs_original(model, dataloader, device, save_path: Path, num_images = 8):
+    """
+    Creating a fucntion that will help to compare the original images 
+    versus the reconstructed images
+
+    Parameters:
+    model: torch.nn.Module
+        Trained VQ-VAE model; this function sets it to eval() and runs inference under no-grad.
+    dataloader: torch.utils.data.DataLoader
+        DataLoader providing a test (or val) split; must yield (images, paths) where
+        images are float tensors of shape [B, 1, H, W].
+    device: torch.device or str
+        Whether using device type cuda or cpu.
+    save_path : pathlib.Path
+        Destination PNG path for the comparison grid.
+    num_images : int
+        Number of examples (columns) to visualize from the first batch.
+
+    Returns:
+    None
+        Writes a PNG to save_path and prints its location.
+    """
     model.eval()
     images, _ = next(iter(dataloader)) # Taking one batch 
     images = images[:num_images].to(device) # limiting to num_images columns
@@ -142,6 +176,27 @@ def reconstruction_vs_original(model, dataloader, device, save_path: Path, num_i
 
 # Creating the main fucntion 
 def main(args):
+    """
+    Training/validation/testing for a VQ-VAE on HipMRI slices.
+
+    Parameters:
+    args: argparse.Namespace
+        Parsed CLI args:
+          - repo_root (str): Repository root containing the dataset folder.
+          - save_dir (str): Output directory for checkpoints, CSV, and plots.
+          - epochs (int): Number of training epochs.
+          - batch_size (int): Batch size for train/val.
+          - lr (float): Learning rate for Adam.
+          - num_workers (int): DataLoader workers.
+          - model_base_channels (int): Base channels for encoder/decoder.
+          - z_dim (int): Latent channel width / embedding dimension.
+          - n_codes (int): Codebook size for quantizer.
+
+    Returns:
+    None
+        Writes checkpoints, CSV/plots, and prints metrics. Also saves a test
+        reconstruction panel
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device {device}")
 

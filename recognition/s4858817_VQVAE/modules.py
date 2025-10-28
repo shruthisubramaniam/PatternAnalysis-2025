@@ -2,13 +2,6 @@
 The model modules (VQ-VAE) for analysing HipMRI Prostate Cancer are 
 included in this Python file.
 
-Project Objective:
-Develop a generative VQVAE or VQVAE2 model for the HipMRI Study on Prostate Cancer
-using processed 2D slices.
-
-Goal:
-Produce "reasonably clear images" and a Structural Similarity (SSIM) of over 0.6
-
 Purpose of modules.py:
 - Define CNN building blocks (Residual, conv_block).
 - Implement vector quantization (codebook) with a straight-through estimator.
@@ -17,11 +10,11 @@ Purpose of modules.py:
 
 What this code does:
 1) Residual block:
-ReLU to 3x3 Conv to ReLU to 1x1 Conv is the pre-activation residual unit. 
+ReLU to 3x3 Conv to ReLU to 1x1 Conv is the pre-activation residual unit. 
 Next, a skip connection is added. This is to promote steady training with few parameters.
 
 2) conv_block
-Conv2d to BatchNorm2d to ReLU is the convenience layer for fast feature extraction.
+Conv2d to BatchNorm2d to ReLU is the convenience layer for fast feature extraction.
 
 3) VectorQuantizer
 - Calculates L2 distances to a KxD codebook and flattens latents.
@@ -42,16 +35,9 @@ After restoring spatial size by a 1x1 projection from z_dim to deconvolution
 - Reconstructed x_hat, vq_loss, and perplexity are the returns.
 
 Shapes:
-Input  / Output  -  [B, 1, H, W]
+Input/Output  -  [B, 1, H, W]
 Latent - [B, z_dim, H/8, W/8]
 Code indices - [B, H/8, W/8]
-(Exact reconstruction size when H and W are multiples of 8.)
-
-Important hyperparameters:
-z_dim: latent channel width (128).
-n_codes: codebook size K (512).
-beta: commitment weight (0.25).
-base: the encoder/decoder's channel base width (64).
 
 Dependencies:
 PyTorch (torch, torch.nn, torch.nn.functional)
@@ -74,6 +60,10 @@ class Residual(nn.Module):
     """
     Pre-activation residual block. Skip (x + block(x)) is added after ReLU to 3x3 Conv to 
     ReLU to 1x1 Conv.
+
+    Parameters:
+    ch: int
+        Number of input/output channels.
     """
     def __init__(self, ch: int):
         super().__init__()
@@ -85,12 +75,38 @@ class Residual(nn.Module):
         )
     
     def forward(self, x): 
-        # Residual connection where output = input + transformed(input)
+        """
+        Forward pass where # Residual connection where 
+        output = input + transformed(input)
+
+        Parameters:
+        x: torch.Tensor
+            Input feature map of shape [B, ch, H, W].
+        
+        Returns:
+        torch.Tensor
+            Output feature map of shape [B, ch, H, W] with residual skip added.
+        """
         return x + self.block(x)
 
 def conv_block(ci: int, co: int, ks: int = 3, stride: int = 1, pad: int = 1):
     """Convenience conv block where it is BatchNorm2d to ReLU to Conv2d.
-    ci stands for in-channels, co for out-channels, and ks for kernel size, stride, and pad.
+
+    Returns:
+    ci: int
+        Number of input channels.
+    co: int
+        Number of output channels.
+    ks: int
+        Kernel size.
+    stride: int
+        Convolution stride.
+    pad: int
+        Zero padding.
+    
+    Returns:
+    nn.Sequential
+        A sequence: Conv2d(ci to co, ks, stride, pad) to BN(co) to ReLU.
     """
     return nn.Sequential(
         nn.Conv2d(ci, co, ks, stride=stride, padding=pad),
@@ -101,10 +117,11 @@ def conv_block(ci: int, co: int, ks: int = 3, stride: int = 1, pad: int = 1):
 class VectorQuantizer(nn.Module):
     """
     Codebook-based vector quantizer with a straight-through estimator
-     Args:
-     num_embeddings (K): codebook size
-     embedding_dim (D): code vector dimension
-     beta: commitment loss weight
+
+    Parameters:
+    num_embeddings (K): codebook size
+    embedding_dim (D): code vector dimension
+    beta: commitment loss weight
     
     Forward:
     z_e: (B, D, H, W) continuous latents
@@ -114,7 +131,6 @@ class VectorQuantizer(nn.Module):
     vq_loss 
     perplexity
     indices - (B, H, W) integer code indices
-    
     """
     def __init__(self, num_embeddings: int = 512, embedding_dim: int = 128, beta: float = 0.25):
         super().__init__()
@@ -174,6 +190,22 @@ class Encoder(nn.Module):
     - conv_block(base*4, base*4, stride=2) - downsampled by 8
     - Residual(base*4)
     - 1x1 Conv to z_dim
+
+    Parameters:
+    in_ch: int
+        Number of input channels (1 for grayscale).
+    base: int
+        Base channel width multiplier.
+    z_dim: int
+        Latent channel width/embedding dimension.
+    
+    Forward:
+    x: torch.Tensor
+        Input tensor [B, in_ch, H, W].
+    
+    Returns:
+    torch.Tensor
+        Latent tensor z_e of shape [B, z_dim, H/8, W/8].
     """
     def __init__(self, in_ch: int = 1, base: int = 64, z_dim: int = 128):
         super().__init__()
@@ -208,6 +240,22 @@ class Decoder(nn.Module):
     - ConvTranspose2d: base -> base (stride=2) 
     - ReLU
     - 1x1 Conv: base to out_ch
+
+    Parameters:
+    out_ch: int
+        Number of output channels (1 for grayscale)
+    base: int
+        Base channel width multiplier.
+    z_dim: int
+        Latent channel width/embedding dimension.
+    
+    Forward:
+    z: torch.Tensor
+        Quantized latent tensor [B, z_dim, H/8, W/8].
+    
+    Returns:
+    torch.Tensor
+        Reconstruction x̂ of shape [B, out_ch, H, W].
     """
     def __init__(self, out_ch: int = 1, base: int = 64, z_dim: int = 128):
         super().__init__()
@@ -231,16 +279,29 @@ class VQVAE(nn.Module):
     """
     A class that builds the VQVAE
 
-    input channels (1 for grayscale HipMRI slices)
-    base channel width (encoder/decoder)
-    z_dim: latent channel width
-    n_codes: codebook size K
-    beta: commitment weight
+    Parameters:
+    in_channels: int
+        input channels (1 for grayscale HipMRI slices)
+    base: int
+        base channel width (encoder/decoder)
+    z_dim: int 
+        Latent channel width
+    n_codes: int
+        Codebook size K
+    beta: float 
+        commitment weight for VQ loss 
 
-    forward returns:
-    x_hat: reconstructed image (B, in_channels, H, W)
-    vq_loss 
-    perplexity
+    Forward:
+    x: torch.Tensor
+        Input tensor [B, in_channels, H, W].
+    
+    Returns:
+    x_hat: torch.Tensor
+        reconstructed image (B, in_channels, H, W)
+    vq_loss: torch.Tensor
+        Scalar VQ loss. 
+    perplexity: torch.Tensor
+        code usage perplexity
     """
     def __init__(self, in_channels: int = 1, base: int = 64, z_dim: int = 128, n_codes: int = 512, beta: float = 0.25):
         super().__init__()
