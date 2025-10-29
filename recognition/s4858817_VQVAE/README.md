@@ -1,0 +1,4 @@
+# HipMRI Study on Prostate Cancer Using the Generative Model VQ-VAE
+
+## Project Description 
+My project aims to train a Vector-Quantised Variational Autoencoder (VQ-VAE) on preprocessed 2D prostate MRI images from the HipMRI prostate cancer study. The goal of this project is build a VQ-VAE, train it using the 2D prostate MRI images and used the trained VQ-VAE to not only produce reconstrcuted images with reasonable clarity but reconstrcuted images that also have a Structured Similarity Index (SSIM) of 0.6 or greater. By producing realistic slice samples, my project provides as a useful tool for exploring prostate-cancer imaging and supproting downstream research.   
