@@ -157,6 +157,9 @@ Figure. 5. Eight examples of original images vesus the reconstructed images for 
 ![Reconstructed vs original image - best model](./readme_images/prediction_reconstruction_examples_best.png)
 Figure. 6. Eight examples of original images vesus the reconstructed images for the best model
 
+Through the images it can be seen that reconstruction quality improves gradually from early training to mid-training and then starts to saturate. At epoch 10, low-frequency blur is the primary feature that shows up in the outputs. Large, bright areas are reproduced, but the edges are soft and the internal textures are washed out. By epoch 30, the model has clearer boundaries and more consistent contrast. The dark and bright areas are in the right places, but the fine details are still blurred. At epoch 50, the thin, high-contrast structures are better defined, and the shading artefacts along the edges get smaller. This shows that the encoder-codebook-decoder pipeline is modelling both global anatomy and mid-scale texture. The epoch 70 panel is the best in terms of quality and gives the highest test SSIM of all the runs. The outlines of the organs are clear, the small bright foci are in the right places, and the backgrounds are smooth without too much blur. This is the point where your validation SSIM curve has mostly levelled off. The checkpoint that validation SSIM chose as the "best" at epoch 95 looks very similar overall, but it is a little smoother in areas with high contrast . This is why its test SSIM is a little lower than the 70-epoch model (the later training probably tuned more closely to the validation distribution and traded a little sharpness for stability).
+
+Overall, the images shows quick early increases in reconstruction quality as epoch number increases and convergence around 70 epochs. Only small changes in appearance can be seen after 70 epochs. Hence, the 70-epoch reconstructions work best on the held-out test set.
 
 
 
