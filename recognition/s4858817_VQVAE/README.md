@@ -120,6 +120,49 @@ Each epoch ends with the printing of the SSIM scores and the average training an
 
 The following plots demonstrate how well my trained model performed.   
 
+![Train and validation loss per epoch](./readme_images/lost_plot.png)
+Graph. 1. The train and validation loss versus epoch number 
+
+Graph. 1 shows total loss (reconstruction loss with VQ terms) for training (blue) and validation (orange) over 100 epochs. Both curves start high and drop steeply in the first few epochs, which means the model learns the basic reconstruction mapping very quickly at the chosen learning rate. At the 100th  epoch it can be seen that the validation loss has dropped down to 0.237. 
+
+![Validation SSIM plot](./readme_images/validation_ssim_plot.png)
+Graph. 2. Validation SSIM versus epoch number 
+
+Graph. 2. shows the validation SSIM improving over training. The score climbs rapidly from around 0.35 at epoch 1 to greater than 0.60 by roughly 10–15 epochs. After that, increases in the SSIM score is gradual with small, normal fluctuations, and the curve starts to plateaus around 0.74 to 0.76 by around 50–60 epochs. The absence of a downward drift suggests no obvious overfitting. The plateaing curve in the graph further emphasises that additional epochs more than 100 are not necessary and SSIM is likely to stay withing the 0.74 to 0.76 range regardless.
+
+![Validation Perplexity plot](./readme_images/validation_perplexity_plot.png)
+Graph. 3. Validation perplexity versus epoch number 
+
+Graph. 3 shows how validation perplexity chnages as epoch number increases. It begins very low (around 5) in the first epoch and then increases through aroun 40 to 60 epochs as the encoder and codebook co-adapt. This indicates that code use is becoming more diverse rather than collapsing. After epoch 60 the curve levels off it at around 95 to 105 with small fluctuations, which suggests code usage has stabilized. The plateau timing aligns with the SSIM plateau, meaning once the model has learned a useful set of codes, continued quality improves only marginally.
+
+From my observations I found that epoch 95 produced the best SSIM of 0.7571. Therefore, the model produced at this epoch was saved as the best model and used to predict the reconstructed images using the test set in predict.py. 
+
+## Predictions - producing reconstructed images
+The last python file produced for the project was predict.py. It loads a saved checkpoint (the best model that produces the highest SSIM), makes reconstructions of test images and prints the average SSIM. All example images are saved into a predictions/ folder.
+
+Below are some examples of reconstructed images (bottom) versus the original images (top) at different epochs. 
+
+![Reconstructed vs original image - epoch 10](./readme_images/prediction_reconstruction_examples_10.png)
+Figure. 2. Eight examples of original images vesus the reconstructed images for 10 epochs
+
+![Reconstructed vs original image - epoch 30](./readme_images/prediction_reconstruction_examples_30.png)
+Figure. 3. Eight examples of original images vesus the reconstructed images for 30 epochs
+
+![Reconstructed vs original image - epoch 50](./readme_images/prediction_reconstruction_examples_50.png)
+Figure. 4. Eight examples of original images vesus the reconstructed images for 50 epochs
+
+![Reconstructed vs original image - epoch 70](./readme_images/prediction_reconstruction_examples_70.png)
+Figure. 5. Eight examples of original images vesus the reconstructed images for 70 epochs
+
+![Reconstructed vs original image - best model](./readme_images/prediction_reconstruction_examples_best.png)
+Figure. 6. Eight examples of original images vesus the reconstructed images for the best model
+
+
+
+
+
+
+
 
 
 
