@@ -85,6 +85,42 @@ Instead of using nearest-neighbor upsampling and then 3×3 convolutions, I used 
 ### The VQ-VAE 
 Modules.py's VQVAE class combines the three previously mentioned elements into a single end-to-end model. To create a continuous latent tensor with form [B,128,H/8,W/8], the encoder first processes an input slice at runtime. This latent is then sent to the vector-quantiser, which creates the quantised latent z_q, which has the same spatial dimensions as the encoder output, by substituting the closest entry from the learnt codebook for each 128-dimensional latent vector. After consuming z_q, the decoder recreates a single-channel picture with the initial resolution.
 
+The third python file is train.py. This script trains the model built in predict.py using the datasets from dataset.py. It updates the weights for each epoch, tracks loss and SSIM, shows a progress bar, saves plots, and writes out the best checkpoint (chosen by validation SSIM).
+
+## Training 
+
+### How train.py works 
+The whole VQ-VAE learning and evaluation process is coordinated by train.py. The training, validation, and test data loaders are initially constructed using dataset.py. The script then automatically chooses the computing device, instantiating the model as a CUDA GPU if one is available or the CPU otherwise. The VQVAE model is then instantiated ``` VQVAE(in_channels=1, base=64, z_dim=128, n_codes=512, beta=0.25) ``` 
+
+In the train.py script, I define the total loss (described previously through the combination of the reconstrcution loss equation, the VQ loss equation and the commitment loss equation). Optimisation then proceeds with the Adam optimiser at a specified learning rate. When optimisation is occuring, for every mini-batch, the train.py script computes the total loss, runs back-propagation to obtain gradients, and Adam updates each parameter with an adaptive step computed from exponentially weighted averages of past gradients (first moment) and of their squared values (second moment), producing parameter-wise step sizes scaled by the chosen learning rate.
+
+Training is organised into epochs, where an epoch is one complete pass through the entire training set. At the start of each epoch, the DataLoader shuffles the samples and splits them into mini-batches. At the start of each epoch, the DataLoader shuffles the samples and splits them into mini-batches. Within the epoch, each mini-batch goes through the compute-loss then back-propagation and then to the Adam-update cycle described above, so the parameters take many small steps as the model sees all training examples once. 
+
+When the epoch ends, the script switches to evaluation mode and runs over the validation set to compute validation loss and validation SSIM. The SSIM measures how close two images are in perceived structure, comparing local luminance, contrast, and pattern similarity. The SSIM score is a value between 0 and 1 where the higher the score translates to the reconstrcuted images being more structurally similar to the original images compared to a lower score. If the current model achieves a higher validation SSIM than any previous epoch, its weights are saved as the best checkpoint. 
+
+Apart from SSIM, train.py also provides perplexity, which is a codebook use diagnostic. The train.py script highlights how widely the model is utilising the available codes after quantisation and examines which code indices were selected throughout the latent grid. Very low perplexity indicates the model is collapsing onto a small set of codes. If the model is functioning well, then usually code usage will tend to widen in the early epochs and then stabalize as training converges. Perplexity is logged per epoch alongside loss and SSIM but is used purly just for monitoring the model and is not part of the optimisation. 
+
+### Hyperparameters used in training 
+- **Epochs: 100**
+I first tried only uptil 30 epochs initially and then moved onto 80 epochs. I then tried 100 epochs and then 120 epochs. With 30 epochs it was evident that SSIM was not going to stablise any time soon. With 80 epochs, SSIM sometimes stabilised just after training stopped. With 120 epochs, SSIM was already very stable hence, I decided to use 100 epochs with an early stopping and a patience of 8 antivipating that the best SSIM will happen somewhere between 80 to 100 epochs. 
+
+- **Batch size: 32**
+I initially tried a batch size of 16 but decided against this as this produced noisier SSIM curves and slower convergence. I then tried a batch size of 64 however this batch size stressed the computational power without producing any gain to the reconstructed images. Hence, I settled for a batch size of 32 as it produced stable updates. 
+
+- **Optimiser: Adam**
+After incoperating Adam, I then tried to incoperate AdamW which is the Adam optimiser with weights to see if it will give improved results. AdamW did not improve SSIM for this project and infact slowed the early learning phase.
+
+- **Learning rate (Adam): $3 \times 10^{-4}$**
+I also tried learning rates such as $1 \times 10^{-4}$ and $1 \times 10^{-3}$. At $1 \times 10^{-4}$, the model converged more slowly and at $1 \times 10^{-3}$ the loss ocassionally spiked and early validation SSIM degraded. Hence, $3 \times 10^{-4}$ provided the best balance between the two. 
+
+- **Dataloader worker: 2**
+I first tried a worker of 0 however, using 0 under-utilised I/O. I then tried a dataloader worker of 4, however, this value increased the time spent creating and coordinating extra worker processes. Hence, I found a dataloader woker value of 2 to be best. 
+
+Each epoch ends with the printing of the SSIM scores and the average training and validation losses. This offers an overview of the model's performance throughout time. Train.py then saves the plot as an image after plotting the SSIM scores and training and validation losses throughout the epochs. This makes it easier to see how the model performs as training progresses.
+
+The following plots demonstrate how well my trained model performed.   
+
+
 
 
 
