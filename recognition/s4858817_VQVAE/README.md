@@ -161,8 +161,100 @@ Through the images it can be seen that reconstruction quality improves gradually
 
 Overall, the images shows quick early increases in reconstruction quality as epoch number increases and convergence around 70 epochs. Only small changes in appearance can be seen after 70 epochs. Hence, the 70-epoch reconstructions work best on the held-out test set.
 
+## Usage 
 
+Where all the files can be found can be seen through the tree below:
+```
+s4858817_VQVAE/
+├── dataset/                         
+│   ├── keras_slices_train/
+│   ├── keras_slices_validate/
+│   └── keras_slices_test/
+├── readme_images/                   
+│   ├── VQVAE_arch.jpeg
+│   ├── loss_plot.png
+│   ├── validation_ssim_plot.png
+│   ├── validation_perplexity_plot.png
+│   ├── prediction_reconstruction_examples_10.png
+│   ├── prediction_reconstruction_examples_30.png
+│   ├── prediction_reconstruction_examples_50.png
+│   ├── prediction_reconstruction_examples_70.png
+│   └── prediction_reconstruction_examples_best.png
+├── .gitignore
+├── environment.yml                  
+├── dataset.py                    
+├── modules.py                       
+├── train.py                        
+├── predict.py                      
+├── README.md   
+```
+### Setting up the Conda environment 
+I created a conda environment in environment.yml in onder for users to be able to run the python files exactly as reported and reproduce the results. Users can set up the Conda environment using these commands:
 
+To obtain the environment from the repo root, type this command:
+```conda env create -f environment.yml``` 
+
+To activate the environment type this command:
+```conda activate comp3710```
+
+If the user makes edits to the environment, they can update it using this command:
+```conda env update -f environment.yml --prune```
+
+If the user wants to re-export a clean spec of the original environment that they installed they can type this command:
+```conda env export --from-history > environment.yml```
+
+### Using the python files 
+To train the VQ-VAE model, run train.py. This script builds the loaders from dataset.py, constructs the model from modules.py, and saves logs/checkpoints/plots to --save_dir. 
+
+To run train.py, type this command:
+```
+python train.py \
+  --repo_root . \
+  --save_dir results/exp1 \
+  --epochs 100 \
+  --batch_size 32 \
+  --lr 3e-4 \
+  --num_workers 2 \
+  --model_base_channels 64 \
+  --z_dim 128 \
+  --n_codes 512
+  ```
+Where the hyperparameters can be adjusted accordingly. Outputs be saved in results/exp1 and will include best_model.pth, a CSV of metrics, and the loss/SSIM/perplexity plots.
+
+To evaluate and make reconstructions/generations, run predict.py. This script loads the trained checkpoint, rebuilds the VQ-VAE with the given hyperparameters (these must match the ones used during training), reads data from --input_data_dir, reports mean SSIM on a test batch, and saves example images to --output_dir.
+
+To run the predict.py script, run this command:
+```
+python predict.py \
+  --model_path results/exp1/best_model.pth \
+  --input_data_dir ./dataset \
+  --output_dir predictions \
+  --num_examples 8 \
+  --device cuda \
+  --model_base_channels 64 \
+  --z_dim 128 \
+  --n_codes 512
+```
+Once this comand has run the terminal will print the latent grid size and mean SSIM. Files saved to --output_dir include the prediction_reconstruction_examples.png which show the original versus reconstructed images. 
+
+### Dependencies
+- Python 3.12.11
+
+- PyTorch 2.4.1
+
+- TorchVision 0.19.1
+
+- TorchMetrics 1.4.2
+
+- NumPy 1.26.4
+
+- NiBabel 5.3.0
+
+- Matplotlib 3.8.4
+
+- tqdm 4.66.5
+
+- pandas 2.2.2
 
 
 
