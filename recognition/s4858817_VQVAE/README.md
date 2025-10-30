@@ -258,9 +258,32 @@ The user must run train.py before running predict.py
 
 - pandas 2.2.2
 
+## Limitations 
+Some of the limitations of my VQ-VAE model include:
 
+- Not suitable for 3D slices: The VQ-VAE was trained on individual 2D slices, not full 3D volumes. Hence, my model cannot be used for 3D slices as it cannot make sure that the slices are consistant or get the anatomical context that goes acress several slices. 
 
+- Intensity normalisation choice: 
+Per-slice z-score normalisation means that each 2D slice is rescaled to have a mean of zero and a variance of one. This makes optimisation more stable because inputs come in on a consistent numerical scale, gradients behave better, and a single learning rate works reliably. The downside is that it takes away the differences in absolute intensity and global contrast between scans, which could be due to scanner settings or tissue properties. This means that the model cannot use intensity cues from different subjects or scanners.
 
+- Batching with padding:
+Images are never resized; instead, smaller slices are padded with zeros on the right and bottom to make rectangular batches. This keeps the shape but changes the effective content area and can slightly change and bias the statistics and edge responses of BatchNorm near the padded borders.
+
+- Small generalisation gap:
+The epoch with the best validation SSIM (epoch 95) did not have the best test SSIM (the 70-epoch model was a little better). This shows that the validation split and early-stopping criterion are not very sensitive.
+
+- Limited codebook capacity:
+With 512 codes and 128-dimension embeddings, rare or very small structures may still be mapped to generic tokens, which makes it less accurate in edge cases.
+
+## Future works 
+In the future, I would like to use my VQ-VAE model to produce generated images. To do this I will need to create a learned prior over the codes. I will Train an autoregressive prior, like PixelCNN or Transformer, or a diffusion model over the 16×32 code. 
+
+In the future, I would also like to train my model such that it can be used for 3D slices as well. 
+
+I would also like to conduct hyperparameter tuning to see if I can get my validation SSIM score to be great than 0.8. 
+
+## Conclusion 
+To conclude, I designed, trained, and tested a VQ-VAE for 2D prostate MRI slices from the HipMRI study as part of this project. I built a complete, reproducible pipeline that included data loading, per-slice z-score normalisation, an encoder–vector-quantiser–decoder architecture, and a well-instrumented training loop. The model met and exceeded the stated target of SSIM ≥ 0.6, achieving a best validation SSIM of 0.7571. My model also produces 'reasonably clear' reconstructed images. Even though training for more than 70 epochs sometimes raised the validation score (best at epoch 95), the epoch-70 model had a slightly higher test SSIM, which means that the returns were getting smaller and there was a small generalisation gap after the plateau. In general, the system captures the basic structure of prostate MRI slices, gives a baseline that can be repeated and goes beyond the 0.6 SSIM target, and sets the stage for future works. 
 
 
 
