@@ -138,7 +138,7 @@ Graph. 3 shows how validation perplexity chnages as epoch number increases. It b
 From my observations I found that epoch 95 produced the best SSIM of 0.7571. Therefore, the model produced at this epoch was saved as the best model and used to predict the reconstructed images using the test set in predict.py. 
 
 ## Predictions - producing reconstructed images
-The last python file produced for the project was predict.py. It loads a saved checkpoint (the best model that produces the highest SSIM), makes reconstructions of test images and prints the average SSIM. All example images are saved into a predictions/ folder.
+The last python file produced for the project was predict.py. The predict.py script is the driver scripts. It loads a saved checkpoint (the best model that produces the highest SSIM), makes reconstructions of test images and prints the average SSIM. All example images are saved into a predictions/ folder.
 
 Below are some examples of reconstructed images (bottom) versus the original images (top) at different epochs. 
 
@@ -203,7 +203,7 @@ If the user makes edits to the environment, they can update it using this comman
 If the user wants to re-export a clean spec of the original environment that they installed they can type this command:
 ```conda env export --from-history > environment.yml```
 
-### Using the python files 
+### Running the python files and reproducability
 To train the VQ-VAE model, run train.py. This script builds the loaders from dataset.py, constructs the model from modules.py, and saves logs/checkpoints/plots to --save_dir. 
 
 To run train.py, type this command:
@@ -236,6 +236,8 @@ python predict.py \
   --n_codes 512
 ```
 Once this comand has run the terminal will print the latent grid size and mean SSIM. Files saved to --output_dir include the prediction_reconstruction_examples.png which show the original versus reconstructed images. 
+
+The user must run train.py before running predict.py 
 
 ### Dependencies
 - Python 3.12.11
