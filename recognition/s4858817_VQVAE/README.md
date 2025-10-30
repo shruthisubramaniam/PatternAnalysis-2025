@@ -31,6 +31,29 @@ The commitment loss keeps the encoder close to the chosen codes. If the encoder 
 
 Overall, the total loss is a summation of the three losses as seen here $\mathcal{L} = \mathcal{L}_{\text{recon}} + \mathcal{L}_{\text{vq}} + \beta \mathcal{L}_{\text{commit}}$. 
 
-## 
+## Data acquisition and processing 
+
+### How the data was acquired 
+The dataset for this investigation can be found within the HipMRI Study for prostate cancer radiotherapy. The dataset consisted of prostate 2D MRI slide data under the 'keras_slide_data_folder.' I used the rangpur path in order to download the data. The ranpoth path used was /home/groups/comp3710/HipMRI_Study_open. 
+
+### Where the data is located
+Once the dataset was obtained, I saved the data under ./dataset. The data used in this project are the the keras_slice_train, keras_slice_validate and keras_slide_test and can be found as seen below.
+
+./dataset/
+├── keras_slices_train/
+├── keras_slices_validate/
+└── keras_slices_test/
+
+12,660 greyscale 2D MRI pictures of male patients' pelvises, ranging in size but mostly at 256x128 pixels, make up the HipMRI dataset. 
+
+### How the data was processed and made ready for use
+To process the data, I load each grayscale slice from NIfTI and cast it to a single-channel float32 tensor. I apply z-score normalisation on each MRI slide independently. To do this normalisation, I subract the mean of the slice from the pixel intensity and divide this by the standard deviation of the slice. The per-slice z-score  normalisation can be decribed by this equation $x_{\text{norm}} = \frac{x - \mu_{\text{slice}}}{\sigma_{\text{slice}} + \epsilon}$ where $x$ is the pixel intensity, $\mu_{\text{slice}}$ is the mean intensity value across all pixels, $\sigma_{\text{slice}}$ is the standard deviation of the intensity values and $\epsilon$ is a small positive constant to prevent zero division. 
+
+I do not resize any image to make sure that each sample keeps its true height and width to avoid blurring thin structures or changing aspect ratio. 
+
+Training, validation, and test sets of the dataset have previously been separated and I loaded these sets using DataLoader. The table below shows how the data was split into train, validation and test set. There were 11,460 images in the training set, 660 images in the validation set and 540 images in the test set. Since the data was already pre-defined in non-overlapping train, validation and test folders, data leakage was avoided. In other words, only training was used to train the model. 
+
+## Building the VQ-VAE model 
+
 
 
