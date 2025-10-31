@@ -10,7 +10,7 @@ Vector-Quantised VAEs (VQ-VAEs) build on standard VAEs but replace the continuou
 
 Using a discrete latent space rather than a continuous one enables VQ-VAEs to avoid posterior collapse by generating higher-quality images through vector quantisation, which captures more meaningful representations [2]. Instead of relying on a static Gaussian distribution, which limits the model's capacity to modify its outputs, the design enables the encoder to output discrete codes, allowing it to learn a dynamic prior [2]. This discrete method is suitable for a variety of generative tasks, as it provides greater control over the generated material [2]. 
 
-The architecture of the VQ-VAE is the $ \text{encoder} \Rightarrow \text{vector quantizer} \Rightarrow \text{decoder} $. On each forward pass, the encoder turns the image into a grid of feature vectors [1]. A quantizer then replaces each vector with the nearest code from a small learned dictionary (the codebook), and the decoder turns that grid of codes back into an image [2]. We train by minimising the difference between the output and the input (reconstruction loss) and by keeping the encoder and codebook aligned (the VQ/commitment terms) [2]. In inference, we can either reconstruct an input or generate new images by sampling code indices and decoding them.
+The architecture of the VQ-VAE is the encoder to vector-quantiser to decoder structure. On each forward pass, the encoder turns the image into a grid of feature vectors [1]. A quantizer then replaces each vector with the nearest code from a small learned dictionary (the codebook), and the decoder turns that grid of codes back into an image [2]. We train by minimising the difference between the output and the input (reconstruction loss) and by keeping the encoder and codebook aligned (the VQ/commitment terms) [2]. In inference, we can either reconstruct an input or generate new images by sampling code indices and decoding them.
 
 The image below describes how a simple VQ-VAE architecture works with the encoder, vector quantizer and decoder. 
 
@@ -25,12 +25,12 @@ To optimise the encoder and decoder and ensure high-quality picture reconstructi
 This measures how close the reconstructed images $\hat{x}$ are to the original images $x$. Reconstruction loss can be calculated using MSE or L1. The equation to calculate the reconstruction loss can be seen here $L_{\text{recon}} = \|x - \hat{x}\|_2$ (or sometimes $\|x - \hat{x}\|_1$). 
 
 2. The VQ loss [4]:  
-This loss improves the quantisation procedure for improved latent representation by aligning embedding vectors $e$ with the encoder output $z_e(x)$. The VQ Loss can be described by the equation $\mathcal{L}_{\text{vq}} = \|\text{sg}[z_e(x)] - e\|^2$. 
+This loss improves the quantisation procedure for improved latent representation by aligning embedding vectors $e$ with the encoder output $z_e(x)$. The VQ Loss can be described by the equation $$\mathcal{L}_{\text{vq}} = \|\text{sg}[z_e(x)] - e\|^2$$. 
 
 3. The commitment loss [4]: 
-The commitment loss keeps the encoder close to the chosen codes. If the encoder drifts too far from the codebook, quantization gets unstable. The commitment loss nudges the encoder outputs towards the selected code vectors. The commitment loss can be described by this equation $\mathcal{L}_{\text{commit}} = \|z_e(x) - \text{sg}[e]\|^2$. 
+The commitment loss keeps the encoder close to the chosen codes. If the encoder drifts too far from the codebook, quantization gets unstable. The commitment loss nudges the encoder outputs towards the selected code vectors. The commitment loss can be described by this equation $$\mathcal{L}_{\text{commit}} = \|z_e(x) - \text{sg}[e]\|^2$$. 
 
-Overall, the total loss is a summation of the three losses as seen here $\mathcal{L} = \mathcal{L}_{\text{recon}} + \mathcal{L}_{\text{vq}} + \beta \mathcal{L}_{\text{commit}}$  
+Overall, the total loss is a summation of the three losses as seen here $$\mathcal{L} = \mathcal{L}_{\text{recon}} + \mathcal{L}_{\text{vq}} + \beta \mathcal{L}_{\text{commit}}$$  
 
 To conduct the project at hand, I created four Python files. Each Python file was created with the aid of ChatGPT. The first Python file that I built was dataset.py. This Python file locates the MRI images on my computer, loads them, converts each one into a simple 2D array that PyTorch can use, performs light cleanup (resize/normalise), and builds the training, validation, and test batches for the other scripts. This process is explained in more detail in the 'Data acquisition and processing' section.
 
