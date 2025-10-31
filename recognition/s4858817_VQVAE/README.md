@@ -32,7 +32,7 @@ The commitment loss keeps the encoder close to the chosen codes. If the encoder 
 
 Overall, the total loss is a summation of the three losses as seen here $\mathcal{L} = \mathcal{L}_{\text{recon}} + \mathcal{L}_{\text{vq}} + \beta \mathcal{L}_{\text{commit}}$ [4]. 
 
-To conduct the project at hand, I created four Python files. The first Python file that I built was dataset.py. This Python file locates the MRI images on my computer, loads them, converts each one into a simple 2D array that PyTorch can use, performs light cleanup (resize/normalise), and builds the training, validation, and test batches for the other scripts. This process is explained in more detail in the 'Data acquisition and processing' section.
+To conduct the project at hand, I created four Python files. Each Python file was created with the aid of ChatGPT. The first Python file that I built was dataset.py. This Python file locates the MRI images on my computer, loads them, converts each one into a simple 2D array that PyTorch can use, performs light cleanup (resize/normalise), and builds the training, validation, and test batches for the other scripts. This process is explained in more detail in the 'Data acquisition and processing' section.
 
 ## Data acquisition and processing 
 
