@@ -6,31 +6,31 @@ My project aims to train a Vector-Quantised Variational Autoencoder (VQ-VAE) on 
 ## Overview 
 
 ### How the VQ-VAE works
-Vector-Quantised VAEs (VQ-VAEs) build on standard VAEs but replace the continuous latent space with a discrete one. Although traditional VAEs aim to minimise the reconstruction loss between the original and reconstructed images and learn continuous latent representations of the data, they often encounter issues such as posterior collapse. This issue occurs when the model fails to effectively utilise the information during reconstruction, resulting in a simplified latent space.
+Vector-Quantised VAEs (VQ-VAEs) build on standard VAEs but replace the continuous latent space with a discrete one [1]. Although traditional VAEs aim to minimise the reconstruction loss between the original and reconstructed images and learn continuous latent representations of the data, they often encounter issues such as posterior collapse [1]. This issue occurs when the model fails to effectively utilise the information during reconstruction, resulting in a simplified latent space [1].
 
-Using a discrete latent space rather than a continuous one enables VQ-VAEs to avoid posterior collapse by generating higher-quality images through vector quantisation, which captures more meaningful representations. Instead of relying on a static Gaussian distribution, which limits the model's capacity to modify its outputs, the design enables the encoder to output discrete codes, allowing it to learn a dynamic prior. This discrete method is suitable for a variety of generative tasks, as it provides greater control over the generated material. 
+Using a discrete latent space rather than a continuous one enables VQ-VAEs to avoid posterior collapse by generating higher-quality images through vector quantisation, which captures more meaningful representations [2]. Instead of relying on a static Gaussian distribution, which limits the model's capacity to modify its outputs, the design enables the encoder to output discrete codes, allowing it to learn a dynamic prior [2]. This discrete method is suitable for a variety of generative tasks, as it provides greater control over the generated material [2]. 
 
-The architecture of the VQ-VAE is the $ \text{encoder} \Rightarrow \text{vector quantizer} \Rightarrow \text{decoder} $. On each forward pass, the encoder turns the image into a grid of feature vectors. A quantizer then replaces each vector with the nearest code from a small learned dictionary (the codebook), and the decoder turns that grid of codes back into an image. We train by minimising the difference between the output and the input (reconstruction loss) and by keeping the encoder and codebook aligned (the VQ/commitment terms). In inference, we can either reconstruct an input or generate new images by sampling code indices and decoding them.
+The architecture of the VQ-VAE is the $ \text{encoder} \Rightarrow \text{vector quantizer} \Rightarrow \text{decoder} $. On each forward pass, the encoder turns the image into a grid of feature vectors [1]. A quantizer then replaces each vector with the nearest code from a small learned dictionary (the codebook), and the decoder turns that grid of codes back into an image [2]. We train by minimising the difference between the output and the input (reconstruction loss) and by keeping the encoder and codebook aligned (the VQ/commitment terms) [2]. In inference, we can either reconstruct an input or generate new images by sampling code indices and decoding them.
 
 The image below describes how a simple VQ-VAE architecture works with the encoder, vector quantizer and decoder. 
 
 ![VQ-VAE model structure](./readme_images/VQVAE_arch.jpeg)
 
-Figure. 1. A simple VQ-VAE architecture 
+Figure. 1. A simple VQ-VAE architecture [3] 
 
 ### Obtaining the loss
-To optimise the encoder and decoder and ensure high-quality picture reconstructions, the VQ-VAE model employs a loss function comprising three essential components.
+To optimise the encoder and decoder and ensure high-quality picture reconstructions, the VQ-VAE model employs a loss function comprising three essential components [4].
 
-1. The reconstruction loss 
+1. The reconstruction loss [4] 
 This measures how close the reconstructed images $\hat{x}$ are to the original images $x$. Reconstruction loss can be calculated using MSE or L1. The equation to calculate the reconstruction loss can be seen here $L_{\text{recon}} = \|x - \hat{x}\|_2$ (or sometimes $\|x - \hat{x}\|_1$). 
 
-2. The VQ loss 
+2. The VQ loss [4] 
 This loss improves the quantisation procedure for improved latent representation by aligning embedding vectors $e$ with the encoder output $z_e(x)$. The VQ Loss can be described by the equation $\mathcal{L}_{\text{vq}} = \|\text{sg}[z_e(x)] - e\|^2$. 
 
-3. The commitment loss
+3. The commitment loss [4]
 The commitment loss keeps the encoder close to the chosen codes. If the encoder drifts too far from the codebook, quantization gets unstable. The commitment loss nudges the encoder outputs towards the selected code vectors. The commitment loss can be described by this equation $\mathcal{L}_{\text{commit}} = \|z_e(x) - \text{sg}[e]\|^2$. 
 
-Overall, the total loss is a summation of the three losses as seen here $\mathcal{L} = \mathcal{L}_{\text{recon}} + \mathcal{L}_{\text{vq}} + \beta \mathcal{L}_{\text{commit}}$. 
+Overall, the total loss is a summation of the three losses as seen here $\mathcal{L} = \mathcal{L}_{\text{recon}} + \mathcal{L}_{\text{vq}} + \beta \mathcal{L}_{\text{commit}}$ [4]. 
 
 To conduct the project at hand, I created four Python files. The first Python file that I built was dataset.py. This Python file locates the MRI images on my computer, loads them, converts each one into a simple 2D array that PyTorch can use, performs light cleanup (resize/normalise), and builds the training, validation, and test batches for the other scripts. This process is explained in more detail in the 'Data acquisition and processing' section.
 
@@ -50,7 +50,7 @@ Once the dataset was obtained, I saved the data in the ./dataset directory. The 
 The HipMRI dataset comprises 12,660 greyscale 2D MRI images of male patients' pelvises, ranging in size but mostly at 256 x 128 pixels. 
 
 ### dataset.py - How the data was processed and made ready for use
-To process the data, I load each grayscale slice from NIfTI and cast it to a single-channel float32 tensor. I apply z-score normalisation on each MRI slide independently. To do this normalisation, I subtract the mean of the slice from the pixel intensity and divide this by the standard deviation of the slice. The per-slice z-score normalisation can be described by this equation $x_{\text{norm}} = \frac{x - \mu_{\text{slice}}}{\sigma_{\text{slice}} + \epsilon}$ where $x$ is the pixel intensity, $\mu_{\text{slice}}$ is the mean intensity value across all pixels, $\sigma_{\text{slice}}$ is the standard deviation of the intensity values and $\epsilon$ is a small positive constant to prevent zero division. 
+To process the data, I load each grayscale slice from NIfTI and cast it to a single-channel float32 tensor. I apply z-score normalisation on each MRI slide independently [5]. To do this normalisation, I subtract the mean of the slice from the pixel intensity and divide this by the standard deviation of the slice [5]. The per-slice z-score normalisation can be described by this equation $x_{\text{norm}} = \frac{x - \mu_{\text{slice}}}{\sigma_{\text{slice}} + \epsilon}$ where $x$ is the pixel intensity, $\mu_{\text{slice}}$ is the mean intensity value across all pixels, $\sigma_{\text{slice}}$ is the standard deviation of the intensity values and $\epsilon$ is a small positive constant to prevent zero division [5]. 
 
 I do not resize any image to keep each sample’s true height and width and avoid blurring thin structures or changing aspect ratio; instead, during batching, I pad each slice with zeros on the right and bottom up to the batch’s maximum height and width so every original pixel remains unchanged and the geometry is preserved.  
 
@@ -287,6 +287,27 @@ With 512 codes and 128-dimension embeddings, rare or very small structures may 
 
 ## Conclusion 
 To conclude, I designed, trained, and tested a VQ-VAE for 2D prostate MRI slices from the HipMRI study as part of this project. I built a complete, reproducible pipeline that included data loading, per-slice z-score normalisation, an encoder–vector-quantiser–decoder architecture, and a well-instrumented training loop. The model met and exceeded the stated target of SSIM ≥ 0.6, achieving a best validation SSIM of 0.7571. My model also produces 'reasonably clear' reconstructed images. Even though training for more than 70 epochs sometimes raised the validation score (reaching its best at epoch 95), the epoch-70 model had a slightly higher test SSIM, indicating that the returns were decreasing and a small generalisation gap was present after the plateau. In general, the system captures the basic structure of prostate MRI slices, provides a baseline that can be repeated, and exceeds the 0.6 SSIM target, setting the stage for future work.  
+
+## References 
+[1] [Mentzer, F., Minnen, D., Agustsson, E., & Tschannen, M. (2023).        Finite scalar quantization: Vq-vae made simple. arXiv preprint arXiv:2309.15505.](https://arxiv.org/abs/2309.15505)
+
+[2] [Rodriguez, A., & Kokalj-Filipovic, S. (2024). VQalAttent: a Transparent Speech Generation Pipeline based on Transformer-learned VQ-VAE Latent Space. arXiv preprint arXiv:2411.14642.](https://arxiv.org/abs/2411.14642) 
+
+[3] [Li, Y. (2022, November 1). Deep image synthesis through VQVAE and VQGAN. Medium.](https://medium.com/@yl4886/deep-image-synthesis-through-vqvae-and-vqgan-e90fe9a27812) 
+
+[4] [Yadav, S. (2019, September 1). Understanding vector quantized variational autoencoders (VQ-VAE). Medium.](https://shashank7-iitd.medium.com/understanding-vector-quantized-variational-autoencoders-vq-vae-323d710a888a)
+
+[5] [Reinhold, J. C., Dewey, B. E., Carass, A., & Prince, J. L. (2019). Evaluating the impact of intensity normalization on MR image synthesis.](https://pmc.ncbi.nlm.nih.gov/articles/PMC6758567/)
+
+
+
+
+
+
+
+
+
+
 
 
 
